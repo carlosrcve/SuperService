@@ -1,0 +1,317 @@
+{% extends "base.html" %}
+
+{% load static %}
+
+{% block title %}Solicitar Asistencia Vial{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.css" />
+<link rel="stylesheet" href="https://unpkg.com/leaflet-control-geocoder/dist/Control.Geocoder.css" />
+<style>
+/* Estilos generales de interacción */
+#solicitarAsistenciaForm input,
+#solicitarAsistenciaForm select,
+#solicitarAsistenciaForm textarea {
+    border-radius: 8px;
+    transition: border-color 0.2s;
+}
+#solicitarAsistenciaForm input:focus,
+#solicitarAsistenciaForm select:focus,
+#solicitarAsistenciaForm textarea:focus {
+    border-color: var(--bs-warning);
+    box-shadow: 0 0 0 0.25rem rgba(255, 193, 7, 0.5); /* Sombra suave amarilla */
+}
+
+/* ----------------------------------------------------------------- */
+/* 🔑 SOLUCIONES CRÍTICAS PARA EL RENDERIZADO DEL MAPA (CSS ADAPTADO)*/
+/* ----------------------------------------------------------------- */
+
+/* 1. Contenedor padre: Altura fija obligatoria. */
+.card-body.map-container-parent {
+    display: block !important; 
+    min-height: 500px !important;
+    height: 100% !important; /* Permitimos que tome 100% de la altura de la tarjeta h-100 */
+    padding: 0 !important;
+    position: relative !important;
+    overflow: hidden;
+}
+
+/* 2. Contenedor del mapa (hijo): 100% de la altura de su padre. */
+#mapa-incidente {
+    height: 100% !important; 
+    width: 100% !important;
+    box-sizing: border-box !important;
+    margin-bottom: 0;
+    border-bottom-left-radius: 15px; 
+    border-bottom-right-radius: 15px;
+    position: relative !important;
+}
+
+/* Estilo para la barra de búsqueda del geocodificador */
+.leaflet-control-geocoder {
+    margin-top: 10px;
+    margin-left: 10px;
+    max-width: 90%;
+    z-index: 1000;
+}
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container py-4">
+    <div class="row g-4">
+        
+                <div class="col-lg-6">
+            <div class="card shadow-lg border-0 h-100" style="border-radius: 15px;">
+                <div class="card-header text-center py-3" style="background-color: var(--bs-warning); border-top-left-radius: 15px; border-top-right-radius: 15px;">
+                    <i class="bi bi-tools text-white display-6 mb-1"></i>
+                    <h4 class="text-white fw-bold mb-0">Necesitas Ayuda en la Carretera</h4>
+                </div>
+                <div class="card-body p-4">
+                    <p class="lead text-center mb-4 text-warning">¡No te preocupes! **Selecciona tu ubicación en el mapa** y enviaremos ayuda.</p>
+                    
+                    <form id="solicitarAsistenciaForm" method="post">
+                        {% csrf_token %}
+                        
+                                                <input type="hidden" id="incidente-lat-lng" name="incidente_lat_lng" value="">
+                        <input type="hidden" id="nombre-incidente" name="nombre_incidente" value="">
+                        
+                                                <div class="mb-4">
+                            <label for="ubicacionActual" class="form-label fw-bold"><i class="bi bi-geo-alt-fill me-2 text-danger"></i> Ubicación del Incidente</label>
+                            <p class="form-control form-control-lg bg-light" id="incidente-coords-display">
+                                <span id="incidente-coords">Haga clic o use la búsqueda en el mapa</span>
+                            </p>
+                            <div class="form-text">Mueva el marcador rojo o use la barra de búsqueda en el mapa de la derecha.</div>
+                        </div>
+
+
+                                                <div class="mb-4">
+                            <label for="tipoAsistencia" class="form-label fw-bold"><i class="bi bi-wrench-adjustable-fill me-2 text-warning"></i> Tipo de Asistencia</label>
+                            <select class="form-select form-select-lg" id="tipoAsistencia" required name="tipo_asistencia">
+                                <option value="" selected disabled>Selecciona el servicio que necesitas</option>
+                                <option value="grua">Servicio de Grúa (Remolque)</option>
+                                <option value="bateria">Batería Descargada (Jump Start)</option>
+                                <option value="gasolina">Falta de Gasolina</option>
+                                <option value="llanta">Cambio de Llanta</option>
+                                <option value="mecanica">Asistencia Mecánica Menor</option>
+                            </select>
+                        </div>
+                        
+                                                <h5 class="mt-4 mb-3 fw-bold border-top pt-3 text-secondary"><i class="bi bi-car-info-fill me-2"></i> Detalles del Vehículo</h5>
+                        <div class="row g-3 mb-4">
+                            <div class="col-md-6">
+                                <label for="marcaModelo" class="form-label small fw-bold">Marca y Modelo</label>
+                                <input type="text" class="form-control form-control-lg" id="marcaModelo" placeholder="Ej: Toyota Corolla 2015" required name="marca_modelo">
+                            </div>
+                            <div class="col-md-6">
+                                <label for="placa" class="form-label small fw-bold">Placa/Matrícula</label>
+                                <input type="text" class="form-control form-control-lg" id="placa" placeholder="Ej: ABC-123" required name="placa">
+                            </div>
+                        </div>
+
+                                                <h5 class="mt-4 mb-3 fw-bold border-top pt-3 text-secondary"><i class="bi bi-file-earmark-text-fill me-2"></i> Notas Adicionales</h5>
+                        <div class="mb-4">
+                            <label for="notas" class="form-label fw-bold">Descripción del Problema</label>
+                            <textarea class="form-control" id="notas" rows="3" placeholder="Ej: El motor se apagó de repente en el hombrillo. Color del vehículo: rojo." name="notas"></textarea>
+                        </div>
+
+                                                <button type="submit" class="btn btn-warning btn-lg w-100 fw-bold mt-4 text-white hover-lift" style="background-color: var(--bs-warning); border-radius: 10px;">
+                            <i class="bi bi-send-fill me-2"></i> Solicitar Asistencia
+                        </button>
+                    </form>
+                </div>
+            </div>
+        </div>
+        
+                <div class="col-lg-6">
+            <div class="card shadow-lg border-0 h-100" style="border-radius: 15px;">
+                <div class="card-header py-3 text-center" style="background-color: var(--bs-warning); border-top-left-radius: 15px; border-top-right-radius: 15px;">
+                    <h5 class="text-white mb-0 fw-bold"><i class="bi bi-map-fill me-2"></i> Confirma tu Ubicación</h5>
+                </div>
+                                <div class="card-body p-0 map-container-parent" style="border-bottom-left-radius: 15px; border-bottom-right-radius: 15px;">
+                    <div id="mapa-incidente" class="w-100"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.js"></script>
+<script src="https://unpkg.com/leaflet-control-geocoder/dist/Control.Geocoder.js"></script>
+
+<script>
+// --- Variables Globales ---
+const defaultLat = 40.7128; // Coordenada de ejemplo (Nueva York)
+const defaultLng = -74.0060;
+const defaultZoom = 13;
+
+let map = null;
+let geocoder = null; 
+let incidentMarker = null; // Marcador único para el incidente
+
+// Variables DOM (ADAPTADAS)
+const incidenteInput = document.getElementById('incidente-lat-lng');
+const nombreIncidenteInput = document.getElementById('nombre-incidente');
+const incidenteDisplay = document.getElementById('incidente-coords');
+
+
+// Icono Personalizado para el Incidente (Rojo o Amarillo/Naranja)
+const incidentIcon = L.icon({ 
+    iconUrl: 'https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-red.png', 
+    iconSize: [25, 41], iconAnchor: [12, 41], popupAnchor: [1, -34]
+});
+
+
+// 🚨 FUNCIÓN CRÍTICA: Inicialización de Leaflet
+function initializeMap() {
+    console.log("Intentando inicializar el mapa...");
+    if (map) return; 
+
+    try {
+        // 🔑 CAMBIAR EL ID del contenedor del mapa
+        map = L.map('mapa-incidente', {
+            attributionControl: false 
+        }).setView([defaultLat, defaultLng], defaultZoom);
+
+        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+            maxZoom: 19,
+            attribution: '© OpenStreetMap contributors' 
+        }).addTo(map);
+
+        setupMapInteractions();
+
+        // **PASO CRÍTICO DE REDIBUJO:** Forzar redibujo y centrado.
+        map.invalidateSize();
+        setTimeout(() => {
+            map.invalidateSize();
+            map.setView([defaultLat, defaultLng], defaultZoom);
+            console.log("Mapa forzado a redibujar y centrar.");
+        }, 100); 
+
+        L.control.attribution({position: 'bottomleft'}).addTo(map)
+            .setPrefix('Leaflet | © OpenStreetMap contributors');
+
+    } catch (error) {
+        console.error("Error FATAL al inicializar Leaflet:", error);
+    }
+}
+
+
+// --- Lógica de Interacciones ---
+
+function setupMapInteractions() {
+    if (!map) return;
+    
+    // Inicialización del Geocodificador
+    geocoder = L.Control.Geocoder.nominatim();
+    var control = L.Control.geocoder({
+        geocoder: geocoder,
+        collapsed: false,
+        placeholder: 'Buscar ubicación del incidente...',
+        errorMessage: 'Lo sentimos, no se encontró la dirección.',
+    }).addTo(map);
+
+    // Evento al marcar una geocodificación (búsqueda)
+    control.on('markgeocode', function(e) {
+        updateLocation(e.geocode.center, e.geocode.name);
+        map.fitBounds(e.geocode.bbox);
+    });
+
+    // Evento al hacer click en el mapa
+    map.on('click', function(e) {
+        // Geocodificación inversa (obtener dirección del punto)
+        geocoder.reverse(e.latlng, map.options.crs.getProjectedBounds(map.options.crs.projection), function(results) {
+            updateLocation(e.latlng, results.length > 0 ? results[0].name : null);
+        });
+    });
+
+    // Evento al hacer doble clic para centrar
+    map.on('dblclick', function(e) {
+        map.setView([defaultLat, defaultLng], defaultZoom); 
+        map.invalidateSize();
+        console.log('Mapa recentrado.');
+    });
+}
+
+
+/**
+ * Dibuja o actualiza la ubicación del incidente.
+ */
+function updateLocation(latlng, addressText) {
+    if (!map) return;
+
+    const finalAddressText = addressText || '';
+    const coordsText = `Lat: ${latlng.lat.toFixed(6)}, Lon: ${latlng.lng.toFixed(6)}`;
+    const displayContent = finalAddressText || coordsText; 
+    const popupContent = finalAddressText ? `${finalAddressText} (${coordsText})` : coordsText;
+
+    // Eliminar marcador anterior
+    if (incidentMarker) map.removeLayer(incidentMarker);
+       
+    // Crear nuevo marcador y hacerlo arrastrable
+    incidentMarker = L.marker(latlng, { icon: incidentIcon, draggable: true }).addTo(map)
+        .bindPopup(`**Ubicación Incidente:** ${popupContent}`).openPopup();
+       
+    // Añadir evento de arrastre
+    incidentMarker.on('dragend', function(e) { updateMarkerLocation(e.target.getLatLng()); });
+
+    // Guardar valores en campos ocultos
+    incidenteInput.value = `${latlng.lat},${latlng.lng}`; 
+    nombreIncidenteInput.value = finalAddressText;
+    incidenteDisplay.textContent = displayContent;
+       
+    console.log('Ubicación del incidente actualizada.');
+}
+
+// Función para actualizar la ubicación después de arrastrar el marcador
+function updateMarkerLocation(newLatLng) {
+    geocoder.reverse(newLatLng, map.options.crs.getProjectedBounds(map.options.crs.projection), function(results) {
+        // Obtener el nombre de la dirección o usar coordenadas si falla
+        let newAddressText = results.length > 0 ? results[0].name : `(${newLatLng.lat.toFixed(6)}, ${newLatLng.lng.toFixed(6)})`;
+
+        const coordsText = `Lat: ${newLatLng.lat.toFixed(6)}, Lon: ${newLatLng.lng.toFixed(6)}`;
+        const displayContent = newAddressText !== coordsText ? newAddressText : coordsText; 
+        const popupContent = `${newAddressText} (${coordsText})`;
+
+        // Actualizar DOM e Inputs
+        incidenteInput.value = `${newLatLng.lat},${newLatLng.lng}`;
+        nombreIncidenteInput.value = newAddressText;
+        incidenteDisplay.textContent = displayContent;
+
+        incidentMarker.setPopupContent(`**Ubicación Incidente:** ${popupContent}`);
+        incidentMarker.openPopup();
+        console.log(`Ubicación de Incidente actualizada por arrastre.`);
+    });
+}
+
+
+// --- Ejecución ---
+
+// 1. Solución de inicialización: Esperar a que el DOM y los recursos estén listos.
+window.addEventListener('load', () => {
+    // Esperamos 500ms para asegurar que el contenedor y todo el CSS se haya aplicado correctamente
+    setTimeout(initializeMap, 500); 
+});
+
+// 2. Modificación del envío del formulario: Ahora incluye la ubicación del mapa.
+document.getElementById('solicitarAsistenciaForm').addEventListener('submit', function(e) {
+    e.preventDefault();
+    
+    // Validar que se haya seleccionado una ubicación
+    if (!incidenteInput.value) {
+        alert('Por favor, selecciona la ubicación exacta del incidente en el mapa.');
+        return;
+    }
+    
+    const tipo = document.getElementById('tipoAsistencia').value;
+    const ubicacion = nombreIncidenteInput.value || incidenteInput.value;
+
+    // Aquí iría la lógica AJAX/POST real para enviar los datos al backend
+    
+    alert(`¡Asistencia de ${tipo.toUpperCase()} solicitada! Buscando proveedor cerca de ${ubicacion}...`);
+    // Nota: En una implementación real, aquí se haría un fetch/POST a la URL de la vista de Django.
+});
+</script>
+{% endblock %}

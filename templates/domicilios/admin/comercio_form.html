@@ -1,0 +1,18 @@
+{% extends "base.html" %}
+
+{% block title %}Crear Comercio{% endblock %}
+
+{% block content %}
+    <a href="{% url 'admin_comercio_list' %}">⬅️ Volver a Comercios</a>
+    <h1>Crear Nuevo Comercio 🏬</h1>
+    
+    <div class="form-container">
+        <form method="post">
+            {% csrf_token %}
+            {{ form.as_p }}
+            <button type="submit" style="background-color: #007bff; color: white; padding: 10px 15px; border: none; border-radius: 5px; cursor: pointer;">
+                Guardar Comercio
+            </button>
+        </form>
+    </div>
+{% endblock %}

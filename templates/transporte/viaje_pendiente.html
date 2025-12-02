@@ -1,0 +1,28 @@
+{% extends "base.html" %}
+
+{% block title %}Viaje Pendiente{% endblock %}
+
+{% block content %}
+    <h1>Estado de tu Viaje</h1>
+    
+    {% if solicitud %} 
+        <p>ID de Viaje: <strong>#{{ solicitud.id }}</strong></p> 
+        <p>Estado Actual: <strong style="color: orange;">{{ solicitud.get_estado_display }}</strong></p> 
+
+        {% if solicitud.estado == 'solicitado' %}
+            <p>Estamos buscando al conductor más cercano. ¡Por favor espera un momento!</p>
+            <button onclick="window.location.reload();">Recargar Estado</button>
+        {% elif solicitud.estado == 'aceptado' and solicitud.conductor %}
+            <p style="color: green;">¡Viaje Aceptado! El conductor está en camino.</p>
+            <p>Conductor Asignado: **{{ solicitud.conductor.get_full_name|default:solicitud.conductor.username }}**</p>
+            <p>Vehículo: {{ solicitud.vehiculo_usado.modelo }} ({{ solicitud.vehiculo_usado.placa }})</p> 
+        {% else %}
+            <p>El estado de tu viaje es **{{ solicitud.get_estado_display }}**.</p>
+        {% endif %}
+
+    {% else %}
+        <p>No tienes ningún viaje activo pendiente de aceptar.</p>
+        <a href="{% url 'solicitar_viaje' %}">Solicitar un nuevo viaje.</a>
+    {% endif %}
+
+{% endblock %}

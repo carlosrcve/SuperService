@@ -1,0 +1,33 @@
+{% extends "base.html" %}
+
+{% block title %}Registro de Vehículo{% endblock %}
+
+{% block content %}
+    <div class="form-container">
+        <h1>Registrar Vehículo 🏍️</h1>
+        <p>Ingresa los datos de tu vehículo para que pueda ser utilizado en la plataforma.</p>
+        <p style="color: orange; font-weight: bold;">⚠️ Nota: Tu vehículo deberá ser aprobado por un administrador antes de que puedas empezar a recibir solicitudes.</p>
+
+        {% if messages %}
+            <ul class="messages">
+                {% for message in messages %}
+                    <li{% if message.tags %} class="{{ message.tags }}"{% endif %}>{{ message }}</li>
+                {% endfor %}
+            </ul>
+        {% endif %}
+        
+        <form method="post">
+            {% csrf_token %}
+            
+            {{ form.as_p }}
+
+            <button type="submit" style="background-color: #28a745; color: white; padding: 10px 15px; border: none; border-radius: 5px; cursor: pointer; width: 100%;">
+                Registrar y Enviar para Aprobación
+            </button>
+        </form>
+
+        <p style="margin-top: 20px; text-align: center;">
+            <a href="{% url 'conductor_dashboard' %}">Volver al Dashboard del Conductor</a>
+        </p>
+    </div>
+{% endblock %}

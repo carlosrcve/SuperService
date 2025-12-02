@@ -1,0 +1,18 @@
+{% extends "base.html" %}
+
+{% block title %}Crear Producto{% endblock %}
+
+{% block content %}
+    <a href="{% url 'admin_producto_list' comercio_id=view.kwargs.comercio_id %}">⬅️ Volver a Productos</a>
+    <h1>Crear Nuevo Producto</h1>
+    
+    <div class="form-container">
+        <form method="post">
+            {% csrf_token %}
+            {{ form.as_p }}
+            <button type="submit" style="background-color: #007bff; color: white; padding: 10px 15px; border: none; border-radius: 5px; cursor: pointer;">
+                Guardar Producto
+            </button>
+        </form>
+    </div>
+{% endblock %}

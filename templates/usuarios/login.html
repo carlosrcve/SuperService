@@ -1,0 +1,102 @@
+{% extends "base.html" %}
+
+{% block title %}Iniciar Sesión{% endblock %}
+
+{% block content %}
+<div class="container py-5">
+    <div class="row justify-content-center">
+        <div class="col-md-6 col-lg-5">
+            <!-- Tarjeta de Login con estilo Yummy -->
+            <div class="card shadow-lg border-0" style="border-radius: 15px;">
+                <div class="card-header text-center py-4" style="background-color: var(--yummy-dark-green); border-top-left-radius: 15px; border-top-right-radius: 15px;">
+                    <i class="bi bi-key-fill text-white display-5 mb-2"></i>
+                    <h2 class="h3 text-white fw-bold mb-0">Bienvenido a SuperService</h2>
+                </div>
+                <div class="card-body p-4 p-md-5">
+                    <p class="text-center text-muted mb-4">Ingresa tus credenciales para continuar.</p>
+                    
+                    <form method="post">
+                        {% csrf_token %}
+                        
+                        <!-- Mensajes de error globales del formulario -->
+                        {% if form.non_field_errors %}
+                            <div class="alert alert-danger" role="alert">
+                                {% for error in form.non_field_errors %}
+                                    {{ error }}
+                                {% endfor %}
+                            </div>
+                        {% endif %}
+
+                        <!-- Campo de Nombre de Usuario/Email -->
+                        <div class="mb-4">
+                            <label for="{{ form.username.id_for_label }}" class="form-label fw-bold">Usuario o Email</label>
+                            {{ form.username }}
+                            {% if form.username.errors %}
+                                <div class="invalid-feedback d-block">
+                                    {% for error in form.username.errors %}
+                                        {{ error }}
+                                    {% endfor %}
+                                </div>
+                            {% endif %}
+                        </div>
+                        
+                        <!-- Campo de Contraseña -->
+                        <div class="mb-4">
+                            <label for="{{ form.password.id_for_label }}" class="form-label fw-bold">Contraseña</label>
+                            {{ form.password }}
+                            {% if form.password.errors %}
+                                <div class="invalid-feedback d-block">
+                                    {% for error in form.password.errors %}
+                                        {{ error }}
+                                    {% endfor %}
+                                </div>
+                            {% endif %}
+                        </div>
+
+                        <!-- Botón de Iniciar Sesión con estilo Yummy -->
+                        <button type="submit" class="btn btn-lg w-100 fw-bold mt-3" style="background-color: var(--yummy-green); color: white; border-radius: 10px;">
+                            <i class="bi bi-box-arrow-in-right me-2"></i> Iniciar Sesión
+                        </button>
+                    </form>
+                    
+                    <hr class="my-4">
+                    
+                    <p class="text-center mb-0">
+                        ¿No tienes cuenta? 
+                        <a href="{% url 'usuarios:registro_cliente' %}" class="fw-bold" style="color: var(--yummy-green);">Regístrate como Cliente</a>
+                    </p>
+                    <p class="text-center mt-2">
+                        ¿Quieres trabajar con nosotros? 
+                        <a href="{% url 'usuarios:registro_conductor' %}" class="fw-bold text-muted">Regístrate como Conductor/Repartidor</a>
+                    </p>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Pequeño ajuste de CSS para que los campos de formulario se vean bien con Bootstrap 5 -->
+<style>
+    /* Asegurar que los inputs se vean bien en login.html */
+    .card-body input[type="text"], 
+    .card-body input[type="password"],
+    .card-body input[type="email"] {
+        width: 100%;
+        padding: 10px 15px;
+        border: 1px solid #ccc;
+        border-radius: 8px;
+        transition: border-color 0.2s;
+    }
+    .card-body input[type="text"]:focus, 
+    .card-body input[type="password"]:focus,
+    .card-body input[type="email"]:focus {
+        border-color: var(--yummy-green);
+        outline: none;
+        box-shadow: 0 0 0 0.25rem rgba(55, 150, 84, 0.25); /* Sombra verde sutil */
+    }
+    .invalid-feedback {
+        color: var(--bs-danger);
+        font-size: 0.875em;
+    }
+</style>
+{% endblock %}

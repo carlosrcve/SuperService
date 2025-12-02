@@ -1,0 +1,45 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}Bandeja de Entrada de Chats{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <h2>Conversaciones Activas 💬</h2>
+    <p class="lead">Listado de chats ordenados por el mensaje más reciente.</p>
+
+    <div class="list-group">
+        {% for conv in lista_conversaciones %}
+            <a href="{% url 'chat_room' user_id=conv.otro_participante.pk %}" class="list-group-item list-group-item-action d-flex justify-content-between align-items-center">
+                
+                <div class="d-flex flex-column">
+                    <h5 class="mb-1 text-primary">
+                        Chat con {{ conv.otro_participante.username }}
+                    </h5>
+                    {% if conv.ultimo_mensaje %}
+                        <small class="text-muted">
+                            {% if conv.ultimo_mensaje.autor == user %}Tú: {% endif %}
+                            {{ conv.ultimo_mensaje.contenido|truncatechars:50 }}
+                        </small>
+                    {% else %}
+                        <small class="text-warning">Sin mensajes recientes.</small>
+                    {% endif %}
+                </div>
+
+                {% if conv.ultimo_mensaje %}
+                    <small class="text-right text-info">
+                        {{ conv.ultimo_mensaje.timestamp|date:"d M, H:i" }}
+                    </small>
+                {% endif %}
+
+            </a>
+        {% empty %}
+            <div class="alert alert-info">
+                Aún no tienes conversaciones activas. Ve a la lista de usuarios para iniciar una.
+            </div>
+            <a href="{% url 'chat_list' %}" class="btn btn-primary mt-3">Ver Usuarios Disponibles</a>
+        {% endfor %}
+    </div>
+
+</div>
+{% endblock %}

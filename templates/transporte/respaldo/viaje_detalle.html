@@ -1,0 +1,254 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}Detalle de Viaje #{{ viaje.id }}{% endblock %}
+
+{% block content %}
+    <h1 style="color: #007bff;">Detalle del Viaje #{{ viaje.id }}</h1>
+
+    <div class="card" style="border: 1px solid #ddd; padding: 20px; border-radius: 8px; margin-bottom: 30px;">
+        <h3 style="margin-top: 0; border-bottom: 2px solid #ccc; padding-bottom: 10px;">
+            Estado Actual: 
+            <strong style="color: 
+                {% if viaje.estado == 'Completado' %}green
+                {% elif viaje.estado == 'Cancelado' %}red
+                {% elif viaje.estado == 'En Curso' %}#ff9800
+                {% else %}blue
+                {% endif %};">
+                {{ viaje.estado }}
+            </strong>
+        </h3>
+        
+        <p><strong>Solicitado en:</strong> {{ viaje.fecha|date:"d M Y" }} a las {{ viaje.hora|time:"h:i A" }}</p>
+        <p><strong>Tarifa Estimada:</strong> <span style="font-size: 1.1em; font-weight: bold;">${{ viaje.tarifa_estimada|floatformat:2|default:"N/A" }}</span></p>
+
+        {% if viaje.tarifa_final %}
+            <p><strong>Tarifa Final Cobrada:</strong> <span style="font-size: 1.2em; color: green; font-weight: bold;">${{ viaje.tarifa_final|floatformat:2 }}</span></p>
+        {% endif %}
+
+        {% if viaje.iniciado_en %}
+            <p><strong>Iniciado:</strong> {{ viaje.iniciado_en|date:"d M Y h:i A" }}</p>
+        {% endif %}
+
+        {% if viaje.finalizado_en %}
+            <p><strong>Finalizado:</strong> {{ viaje.finalizado_en|date:"d M Y h:i A" }}</p>
+        {% endif %}
+    </div>
+
+    <div style="display: flex; gap: 30px; margin-bottom: 30px;">
+        <div class="info-cliente" style="flex: 1; padding: 15px; border: 1px dashed #007bff; border-radius: 5px;">
+            <h4>👤 Cliente</h4>
+            <p><strong>Nombre:</strong> {{ viaje.cliente.get_full_name|default:viaje.cliente.username }}</p>
+            <p><strong>Contacto:</strong> {{ viaje.cliente.telefono|default:"No disponible" }}</p>
+        </div>
+        
+        <div class="info-conductor" style="flex: 1; padding: 15px; border: 1px dashed #28a745; border-radius: 5px;">
+            <h4>🚗 Conductor Asignado</h4>
+            {% if viaje.conductor %}
+                <p><strong>Nombre:</strong> {{ viaje.conductor.get_full_name|default:viaje.conductor.username }}</p>
+                <p><strong>Vehículo:</strong> {{ viaje.vehiculo_usado.modelo|default:"N/A" }}</p>
+                <p><strong>Placa:</strong> <span style="font-weight: bold;">{{ viaje.vehiculo_usado.placa|default:"N/A" }}</span></p>
+            {% else %}
+                <p style="color: orange;">Conductor aún no asignado o confirmado.</p>
+            {% endif %}
+        </div>
+    </div>
+
+    <div class="route-info">
+        <h3>📍 Detalles de la Ruta</h3>
+        <p><strong>Origen:</strong> (Lat: {{ viaje.origen_lat|default:"N/A" }}, Lon: {{ viaje.origen_lon|default:"N/A" }})</p>
+        <p><strong>Destino:</strong> (Lat: {{ viaje.destino_lat|default:"N/A" }}, Lon: {{ viaje.destino_lon|default:"N/A" }})</p>
+    </div>
+    
+    <a href="{% url 'home' %}" class="btn-back" style="display: inline-block; margin-top: 20px; padding: 10px 15px; background-color: #6c757d; color: white; text-decoration: none; border-radius: 5px;">Volver</a>
+
+    <hr style="margin-top: 40px; margin-bottom: 40px;">
+
+    <div class="chat-container" style="max-width: 600px; margin: 0 auto; border: 1px solid #ddd; padding: 20px; border-radius: 8px; background-color: #f9f9f9;">
+        <h3 style="color: #007bff; border-bottom: 2px solid #007bff; padding-bottom: 10px; margin-top: 0;">💬 Chat del Viaje</h3>
+
+        <div class="message-history" id="chat-history" style="height: 300px; overflow-y: scroll; padding: 10px; background-color: white; border: 1px solid #ccc; border-radius: 5px; margin-bottom: 15px;">
+            {% for mensaje in mensajes %}
+                <div class="message-bubble" style="margin-bottom: 10px; padding: 8px 12px; border-radius: 15px; 
+                    {% if mensaje.emisor == request.user %}
+                        background-color: #dcf8c6; float: right; clear: both;
+                    {% else %}
+                        background-color: #f1f0f0; float: left; clear: both;
+                    {% endif %}
+                    max-width: 85%;">
+                    
+                    <small style="font-size: 0.75em; color: #888;">
+                        {% if mensaje.emisor == request.user %}Tú{% else %}{{ mensaje.emisor.username }}{% endif %}
+                        - {{ mensaje.timestamp|date:"h:i A" }}
+                    </small>
+                    <p style="margin: 3px 0 0 0;">{{ mensaje.contenido }}</p>
+                </div>
+            {% empty %}
+                <p style="text-align: center; color: #999; margin-top: 50px;">Aún no hay mensajes en este viaje.</p>
+            {% endfor %}
+            <div style="clear: both;"></div> 
+        </div>
+
+        <form method="post">
+            {% csrf_token %}
+            
+            {% if mensaje_form.errors %}
+                <p style="color: red;">Error al enviar mensaje: {{ mensaje_form.contenido.errors }}</p>
+            {% endif %}
+
+            <div class="input-group">
+                {{ mensaje_form.contenido }}
+                <button type="submit" style="display: block; width: 100%; padding: 10px; background-color: #007bff; color: white; border: none; border-radius: 5px; margin-top: 10px; cursor: pointer;">
+                    Enviar Mensaje
+                </button>
+            </div>
+        </form>
+    </div>
+    <div id="chat-window" style="border: 1px solid #ccc; max-height: 400px; overflow-y: scroll;">
+        {% for mensaje in mensajes %}
+        <p><strong>{{ mensaje.emisor.username }}:</strong> {{ mensaje.contenido }}</p>
+        {% endfor %}
+        <div id="chat-log"></div>
+    </div>
+    <input id="chat-message-input" type="text" size="100"><br>
+    <input id="chat-message-submit" type="button" value="Enviar Mensaje">
+    <div class="card my-4">
+        <div class="card-header">
+            Chat del Viaje #{{ viaje.id }} - Estado: {{ viaje.get_estado_display }}
+        </div>
+        <div id="chat-window" class="card-body" style="height: 400px; overflow-y: scroll;">
+            {% for mensaje in mensajes %}
+            <p style="text-align: {% if mensaje.emisor == user %}right; color: #007bff;{% else %}left;{% endif %}">
+                <strong>{{ mensaje.emisor.username }}:</strong> {{ mensaje.contenido }}
+            </p>
+            {% endfor %}
+            <div id="chat-log"></div>
+        </div>
+        <div class="card-footer">
+            <form method="POST" id="chat-form">
+                {% csrf_token %}
+                {{ mensaje_form.contenido }}
+                <input id="chat-message-input" type="hidden" name="contenido">
+                <button id="chat-message-submit" type="button" class="btn btn-primary mt-2">
+                    Enviar Mensaje
+                </button>
+            </form>
+        </div>
+    </div>
+
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        var chatHistory = document.getElementById('chat-history');
+        if (chatHistory) {
+            // Desplazar automáticamente al final del historial de chat
+            chatHistory.scrollTop = chatHistory.scrollHeight;
+        }
+    });
+</script>
+<script>
+    const viajeId = "{{ viaje.id }}"; // Obtener el ID del viaje del contexto Django
+
+    // NOTA: Usamos el puerto 8081 de Daphne
+    const chatSocket = new WebSocket(
+        'ws://' + window.location.hostname + ':8081' + '/ws/viaje/' + viajeId + '/'
+    );
+
+    // ... (rest of the JavaScript connection and handlers) ...
+    // Aquí irá tu lógica para recibir mensajes (onmessage) e inyectarlos en #chat-log
+</script>
+<script>
+    // 1. Obtener el ID del viaje del contexto de Django
+    const viajeId = "{{ viaje.id }}"; 
+    // Elementos del DOM
+    const chatLog = document.querySelector('#chat-log');
+    const messageInput = document.querySelector('#chat-message-input');
+    const submitButton = document.querySelector('#chat-message-submit');
+
+    // Función para desplazarse al final del chat
+    function scrollToBottom() {
+        const chatWindow = document.querySelector('#chat-window');
+        if (chatWindow) {
+            chatWindow.scrollTop = chatWindow.scrollHeight;
+        }
+    }
+
+    // 2. Conexión WebSocket al Consumer de Viaje
+    // NOTA CLAVE: Usamos el puerto 8081 de Daphne y la ruta /ws/viaje/
+    const chatSocket = new WebSocket(
+        'ws://' + window.location.hostname + ':8081' + '/ws/viaje/' + viajeId + '/'
+    );
+
+    chatSocket.onopen = function(e) {
+        console.log("Conexión WebSocket para Viaje abierta.");
+        scrollToBottom();
+    };
+
+    chatSocket.onclose = function(e) {
+        console.log("Conexión WebSocket para Viaje cerrada inesperadamente.");
+    };
+
+    // 3. Manejo de Mensajes Recibidos (Inyección en el DOM)
+    chatSocket.onmessage = function(e) {
+        const data = JSON.parse(e.data);
+        const message = data.message;
+        const username = data.username;
+        const isMe = data.is_me; // Viene del Consumer
+
+        // Crear el nuevo elemento de párrafo
+        const newParagraph = document.createElement('p');
+        
+        // Estilo básico para diferenciar al emisor
+        const strongTag = document.createElement('strong');
+        strongTag.textContent = username + ':';
+        newParagraph.appendChild(strongTag);
+        
+        newParagraph.append(' ' + message);
+
+        // Opcional: Estilo de burbuja para mensajes propios
+        if (isMe) {
+            newParagraph.style.textAlign = 'right';
+            newParagraph.style.color = '#007bff'; // Un color para tus mensajes
+        }
+
+        // Agregar al registro de chat
+        chatLog.appendChild(newParagraph); 
+        
+        scrollToBottom();
+    };
+
+    // 4. Función de Envío del Mensaje
+    function sendMessage() {
+        const message = messageInput.value;
+        if (message.trim() === "") {
+            return; // No enviar mensajes vacíos
+        }
+        
+        // Enviar el mensaje por el WebSocket
+        chatSocket.send(JSON.stringify({
+            'message': message
+        }));
+        
+        // Limpiar la caja de texto
+        messageInput.value = '';
+    }
+
+    // 5. Asignar Eventos a los Controles
+    
+    // a) Clic en el botón
+    submitButton.onclick = sendMessage;
+
+    // b) Presionar Enter en la caja de texto
+    messageInput.onkeyup = function(e) {
+        if (e.key === 'Enter') { 
+            sendMessage();
+        }
+    };
+    
+    // Asegurar que el scroll baje al cargar la página
+    document.addEventListener('DOMContentLoaded', scrollToBottom);
+
+</script>
+{% endblock %}

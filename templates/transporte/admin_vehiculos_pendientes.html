@@ -1,0 +1,61 @@
+{% extends "base.html" %}
+
+{% block title %}Administración de Vehículos{% endblock %}
+
+{% block content %}
+    <h1 style="color: #dc3545;">Panel de Administración - Vehículos Pendientes 🚨</h1>
+    <p>Revisa la documentación (simulada) de los vehículos y aprueba aquellos que cumplan con los requisitos.</p>
+
+    {% if messages %}
+        <ul class="messages">
+            {% for message in messages %}
+                <li style="color: green;">{{ message }}</li>
+            {% endfor %}
+        </ul>
+    {% endif %}
+
+    <h2>Vehículos Pendientes de Aprobación</h2>
+
+    {% if vehiculos_pendientes %}
+        <table border="1" style="width: 100%; border-collapse: collapse; margin-top: 20px;">
+            <thead>
+                <tr style="background-color: #f8d7da;">
+                    <th style="padding: 10px;">ID</th>
+                    <th style="padding: 10px;">Conductor</th>
+                    <th style="padding: 10px;">Modelo / Color</th>
+                    <th style="padding: 10px;">Placa / Tipo</th>
+                    <th style="padding: 10px;">Acción</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for vehiculo in vehiculos_pendientes %}
+                    <tr>
+                        <td style="padding: 8px; text-align: center;">#{{ vehiculo.id }}</td>
+                        <td style="padding: 8px;">
+                            <strong>{{ vehiculo.conductor.get_full_name|default:vehiculo.conductor.username }}</strong>
+                            <br>(Licencia: {{ vehiculo.conductor.perfilconductor.licencia|default:"N/A" }})
+                        </td>
+                        <td style="padding: 8px;">{{ vehiculo.modelo }} ({{ vehiculo.color }})</td>
+                        <td style="padding: 8px;">{{ vehiculo.placa }} ({{ vehiculo.get_tipo_display }})</td>
+                        <td style="padding: 8px; text-align: center;">
+                            <form method="post" action="{% url 'aprobar_vehiculo' vehiculo_id=vehiculo.id %}" style="display: inline;">
+                                {% csrf_token %}
+                                <button type="submit" style="background-color: #28a745; color: white; padding: 5px 10px; border: none; border-radius: 3px; cursor: pointer;">
+                                    ✔️ Aprobar
+                                </button>
+                            </form>
+                            
+                            <button style="background-color: #6c757d; color: white; padding: 5px 10px; border: none; border-radius: 3px; cursor: pointer;">
+                                ❌ Rechazar
+                            </button>
+                        </td>
+                    </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    {% else %}
+        <p style="color: green; font-weight: bold;">🥳 No hay vehículos pendientes de aprobación en este momento.</p>
+    {% endif %}
+    
+    <p style="margin-top: 30px;"><a href="{% url 'home' %}">Volver al Dashboard Principal</a></p>
+{% endblock %}

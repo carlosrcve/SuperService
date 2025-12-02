@@ -1,0 +1,45 @@
+{% extends "base.html" %}
+
+{% block title %}Asistencia Vial Pendiente{% endblock %}
+
+{% block content %}
+    <h1 style="color: #dc3545;">Solicitud de Asistencia Vial #{{ solicitud.id }} 🔴</h1>
+
+    <div class="status-box" style="border: 2px solid #dc3545; padding: 20px; border-radius: 8px; margin-bottom: 20px;">
+        <h3>Estado Actual: 
+            <strong style="color: 
+                {% if solicitud.estado == 'completado' %}green
+                {% elif solicitud.estado == 'cancelado' %}red
+                {% elif solicitud.estado == 'aceptado' %}#ff9800
+                {% else %}blue
+                {% endif %};">
+                {{ solicitud.get_estado_display }}
+            </strong>
+        </h3>
+        <p>Tipo de Servicio: <strong>{{ solicitud.get_tipo_asistencia_display }}</strong></p>
+        <p>Ubicación: Coordenadas ({{ solicitud.ubicacion_lat }}, {{ solicitud.ubicacion_lon }})</p>
+        <p>Descripción: {{ solicitud.descripcion|default:"No provista." }}</p>
+    </div>
+
+    {% if solicitud.estado == 'solicitado' %}
+        <p style="font-size: 1.1em; color: blue;">Buscando proveedor de asistencia vial...</p>
+        
+    {% elif solicitud.estado == 'aceptado' or solicitud.estado == 'en_ruta_origen' %}
+        <div class="provider-info" style="background-color: #ffe0b2; padding: 15px; border-radius: 5px;">
+            <h3>¡Proveedor Asignado!</h3>
+            <p>El proveedor (Conductor/Grúa) está en camino.</p>
+            <p>Nombre del Proveedor: 
+                <strong>{{ solicitud.proveedor.get_full_name|default:solicitud.proveedor.username }}</strong>
+            </p>
+            <p>Tiempo de llegada estimado: **(Simulación: 15 minutos)**</p>
+        </div>
+        
+    {% elif solicitud.estado == 'completado' %}
+        <p style="font-size: 1.2em; color: green;">✅ El servicio ha sido completado. Gracias por usar SuperService.</p>
+        
+    {% endif %}
+
+    <p style="margin-top: 30px;"><a href="{% url 'home' %}">Volver al Inicio</a> | <a href="#">Necesito ayuda con otro tema</a></p>
+{% endblock %}
+
+

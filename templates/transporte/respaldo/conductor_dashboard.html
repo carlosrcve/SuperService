@@ -1,0 +1,135 @@
+{% extends "base.html" %}
+
+{% block title %}Dashboard de Conductor{% endblock %}
+
+{% block content %}
+    <h1>Panel de Control de Conductor/Repartidor 🧑‍✈️</h1>
+    
+    {% if messages %}
+        <ul class="messages">
+            {% for message in messages %}
+                <li style="color: green;">{{ message }}</li>
+            {% endfor %}
+        </ul>
+    {% endif %}
+
+    <div class="dashboard-header" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+        <h2>Bienvenido, {{ user.get_full_name|default:user.username }}</h2>
+        
+        <form method="post" action="{% url 'toggle_disponibilidad' %}" style="display: inline;">
+            {% csrf_token %}
+            <button type="submit" style="padding: 10px 20px; border: none; border-radius: 5px; cursor: pointer; background-color: {% if user.disponible %}#28a745{% else %}#dc3545{% endif %}; color: white;">
+                {% if user.disponible %}
+                    ✅ Actualmente **DISPONIBLE** (Clic para desconectarte)
+                {% else %}
+                    ❌ Actualmente **NO DISPONIBLE** (Clic para conectarte)
+                {% endif %}
+            </button>
+        </form>
+    </div>
+
+    <hr>
+
+    <section>
+        <h3>Tu Perfil y Vehículos</h3>
+        
+        <p>Rol Asignado: <strong>{{ user.get_rol_display }}</strong></p>
+        
+        <h4>Vehículos Registrados:</h4>
+        {% if vehiculos %}
+            <ul>
+                {% for vehiculo in vehiculos %}
+                    <li>
+                        {{ vehiculo.modelo }} (Placa: {{ vehiculo.placa }}) - 
+                        {% if vehiculo.aprobado %}
+                            <strong style="color: green;">Aprobado</strong>
+                        {% else %}
+                            <strong style="color: orange;">Pendiente de Aprobación</strong>
+                        {% endif %}
+                    </li>
+                {% endfor %}
+            </ul>
+        {% else %}
+            <p>No tienes vehículos registrados.</p>
+        {% endif %}
+        
+        <a href="{% url 'registrar_vehiculo' %}">➕ Registrar Nuevo Vehículo</a>
+    </section>
+
+    <hr>
+
+    <section>
+        <h2>Solicitudes de Viaje Cercanas (Servicio de Transporte)</h2>
+        {% if solicitudes_viaje %}
+            <table border="1" style="width: 100%; border-collapse: collapse;">
+                <thead>
+                    <tr>
+                        <th>ID</th>
+                        <th>Origen (Coords)</th>
+                        <th>Destino (Coords)</th>
+                        <th>Tipo</th>
+                        <th>Acción</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for viaje in solicitudes_viaje %}
+                        <tr>
+                            <td>#{{ viaje.id }}</td>
+                            <td>({{ viaje.origen_lat }}, {{ viaje.origen_lon }})</td>
+                            <td>({{ viaje.destino_lat }}, {{ viaje.destino_lon }})</td>
+                            <td>Viaje</td>
+                            <td>
+                                <form method="post" action="{% url 'aceptar_solicitud' tipo_solicitud='viaje' solicitud_id=viaje.id %}">
+                                    {% csrf_token %}
+                                    <button type="submit" style="background-color: #007bff; color: white; padding: 5px 10px; border: none; border-radius: 3px; cursor: pointer;">
+                                        Aceptar Viaje
+                                    </button>
+                                </form>
+                            </td>
+                        </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        {% else %}
+            <p>No hay solicitudes de viaje pendientes en tu zona en este momento.</p>
+        {% endif %}
+    </section>
+    
+    <hr>
+    
+    <section>
+        <h2>Solicitudes de Asistencia Vial Cercanas</h2>
+        {% if solicitudes_asistencia %}
+            <table border="1" style="width: 100%; border-collapse: collapse;">
+                <thead>
+                    <tr>
+                        <th>ID</th>
+                        <th>Tipo Asistencia</th>
+                        <th>Ubicación (Coords)</th>
+                        <th>Acción</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for asistencia in solicitudes_asistencia %}
+                        <tr>
+                            <td>#{{ asistencia.id }}</td>
+                            <td>{{ asistencia.get_tipo_asistencia_display }}</td>
+                            <td>({{ asistencia.ubicacion_lat }}, {{ asistencia.ubicacion_lon }})</td>
+                            <td>
+                                <form method="post" action="{% url 'aceptar_solicitud' tipo_solicitud='asistencia' solicitud_id=asistencia.id %}">
+                                    {% csrf_token %}
+                                    <button type="submit" style="background-color: #ffc107; color: black; padding: 5px 10px; border: none; border-radius: 3px; cursor: pointer;">
+                                        Aceptar Asistencia
+                                    </button>
+                                </form>
+                            </td>
+                        </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        {% else %}
+            <p>No hay solicitudes de asistencia vial pendientes.</p>
+        {% endif %}
+    </section>
+
+{% endblock %}

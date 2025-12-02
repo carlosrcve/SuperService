@@ -1,0 +1,74 @@
+{% extends "base.html" %}
+
+{% block title %}Finalizar Compra - {{ comercio.nombre }}{% endblock %}
+
+{% block content %}
+    <a href="{% url 'producto_list' comercio_id=comercio.id %}">⬅️ Volver al Menú</a>
+    
+    <h1 style="color: #007bff;">Finalizar Compra en {{ comercio.nombre }}</h1>
+
+    {% if messages %}
+        <ul class="messages">
+            {% for message in messages %}
+                <li style="color: red;">{{ message }}</li>
+            {% endfor %}
+        </ul>
+    {% endif %}
+
+    <div class="checkout-container" style="display: flex; gap: 30px; margin-top: 20px;">
+        
+        <div class="order-summary" style="flex: 1; border: 1px solid #ddd; padding: 20px; border-radius: 8px; background-color: #f9f9f9;">
+            <h3>🛒 Resumen de tu Pedido</h3>
+            
+            <table style="width: 100%; border-collapse: collapse; margin-bottom: 15px;">
+                <thead>
+                    <tr style="border-bottom: 2px solid #ccc;">
+                        <th style="text-align: left; padding: 8px;">Producto</th>
+                        <th style="padding: 8px;">Cant.</th>
+                        <th style="padding: 8px;">Precio Unit.</th>
+                        <th style="text-align: right; padding: 8px;">Total</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for producto_id, item in items %}
+                        <tr>
+                            <td style="padding: 8px;">{{ item.nombre }}</td>
+                            <td style="text-align: center; padding: 8px;">{{ item.cantidad }}</td>
+                            <td style="text-align: center; padding: 8px;">${{ item.precio|floatformat:2 }}</td>
+                            <td style="text-align: right; padding: 8px;">${{ item.cantidad|mul:item.precio|floatformat:2 }}</td>
+                        </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+            
+            <div class="totals" style="padding-top: 10px; border-top: 1px dashed #ccc;">
+                <p style="display: flex; justify-content: space-between;"><span>Subtotal:</span> <strong>${{ subtotal|floatformat:2 }}</strong></p>
+                <p style="display: flex; justify-content: space-between;"><span>Costo de Envío (Simulado):</span> <strong>${{ costo_envio_simulado|floatformat:2 }}</strong></p>
+                <hr>
+                <h3 style="display: flex; justify-content: space-between; color: #dc3545;"><span>TOTAL FINAL:</span> <strong>${{ total_final_simulado|floatformat:2 }}</strong></h3>
+            </div>
+        </div>
+
+        <div class="address-confirmation" style="flex: 1;">
+            <div class="form-container" style="padding: 20px; border: 1px solid #007bff; border-radius: 8px;">
+                <h3>📍 Dirección de Entrega</h3>
+                
+                <form method="post">
+                    {% csrf_token %}
+                    
+                    {{ direccion_form.as_p }}
+
+                    <h3>Método de Pago</h3>
+                    <p style="color: gray;">(Simulado) Pago al Recibir / Tarjeta de Crédito guardada.</p>
+                    
+                    <button type="submit" 
+                            style="background-color: #007bff; color: white; padding: 12px; border: none; border-radius: 5px; cursor: pointer; width: 100%; margin-top: 20px;">
+                        Confirmar Pedido y Pagar ${{ total_final_simulado|floatformat:2 }}
+                    </button>
+                </form>
+            </div>
+        </div>
+    </div>
+    
+    {% load mathfilters %}
+{% endblock %}

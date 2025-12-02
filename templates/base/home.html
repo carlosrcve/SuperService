@@ -1,0 +1,178 @@
+{% extends "base.html" %}
+
+{% load static %}
+
+{% block title %}SuperService - Inicio{% endblock %}
+
+{% block content %}
+<div class="container py-4">
+
+    <!-- Sección Hero (Pide SuperService, es inevitable) - Diseño Yummy -->
+    <div class="hero-section text-center text-md-start mb-5 px-3 py-5" style="background-color: var(--yummy-green); color: white; border-radius: 12px;">
+        <div class="row align-items-center">
+            
+            <div class="col-lg-7 col-md-8">
+                <!-- Título Principal -->
+                <h1 class="mb-3 fw-bolder display-3">Pide SuperService, es inevitable</h1>
+                
+                <!-- Subtítulo Principal -->
+                <p class="h3 fw-light mb-2">La SuperApp de LATAM</p>
+                
+                <!-- Descripción Larga -->
+                <p class="h5 fw-normal mb-5 text-shadow-sm">
+                    Comida, supermercado, transporte, farmacia, bebidas, moda, electrónicos, eventos y más.
+                </p>
+                
+                <p class="mb-3 fw-bold">Descarga la app</p>
+                
+                <div class="hero-buttons d-flex flex-column flex-sm-row gap-3">
+                    <!-- Botones de App Store y Google Play -->
+                    <a href="#" class="btn btn-app-store w-100 w-sm-auto">
+                        <i class="bi bi-apple"></i> App Store
+                    </a>
+                    <a href="#" class="btn btn-google-play w-100 w-sm-auto">
+                        <i class="bi bi-google-play"></i> Google Play
+                    </a>
+                </div>
+            </div>
+            
+            <!-- Mockup del Teléfono (Asume que está en static/img/phone_mockup.png) -->
+            <!-- Usamos un desplazamiento negativo con CSS para imitar la flotación de la imagen -->
+            <div class="col-lg-5 col-md-4 d-none d-md-block text-center">
+                <img src="{% static 'img/phone_mockup.png' %}" alt="SuperService App Mockup" class="img-fluid hero-phone-mockup">
+            </div>
+        </div>
+    </div>
+
+
+    <!-- -------------------------------------------------------------------------------------------------- -->
+    <!-- LÓGICA DE ROLES (Autenticado) -->
+    <!-- -------------------------------------------------------------------------------------------------- -->
+    {% if not user.is_authenticated %}
+        
+        <!-- Sección para Usuarios No Autenticados (Registro/Login) -->
+        <div class="text-center mt-5 mb-5 p-4 bg-white rounded shadow-sm">
+            <h2 class="mb-4 text-yummy-dark-green">Empieza a Usar SuperService</h2>
+            <a href="{% url 'usuarios:login' %}" class="btn btn-success btn-lg me-3 shadow">
+                <i class="bi bi-key-fill"></i> Iniciar Sesión
+            </a>
+            <a href="{% url 'usuarios:registro_cliente' %}" class="btn btn-primary btn-lg shadow">
+                <i class="bi bi-person-plus-fill"></i> Registrarse como Cliente
+            </a>
+            <p class="mt-4 text-muted">
+                ¿Quieres trabajar con nosotros? <a href="{% url 'usuarios:registro_conductor' %}" class="text-decoration-none fw-bold text-success">Regístrate como Conductor/Repartidor</a>
+            </p>
+        </div>
+
+    {% else %}
+        <!-- Sección para Usuarios Autenticados (Dashboards/Selección) -->
+        <p class="h4 mt-5">Hola, <span class="fw-bold text-yummy-dark-green">{{ user.get_full_name|default:user.username }}</span>.</p>
+        <hr>
+
+        <div class="role-dashboard mt-4">
+            
+            {% if user.rol == 'administrador' %}
+                <h2 class="text-danger mb-4">Panel de Administrador 🛡️</h2>
+                <!-- Tarjetas de Administrador (Rojo) -->
+                <div class="row row-cols-1 row-cols-md-3 g-4">
+                    <div class="col">
+                        <a href="{% url 'admin_aprobacion_vehiculos' %}" class="card-link text-decoration-none h-100 d-block service-card">
+                            <div class="card shadow-lg h-100 border-danger border-3 hover-lift">
+                                <div class="card-body text-center p-4">
+                                    <i class="bi bi-truck-flatbed text-danger display-5 mb-2"></i>
+                                    <h3 class="card-title text-danger">Vehículos Pendientes</h3>
+                                    <p class="card-text text-muted">Aprobar licencias y autos.</p>
+                                </div>
+                            </div>
+                        </a>
+                    </div>
+                </div>
+
+            {% elif user.rol == 'conductor' or user.rol == 'repartidor_domicilios' %}
+                <h2 class="text-warning mb-4">Dashboard de Proveedor de Servicios 🛵</h2>
+                <!-- Tarjetas de Proveedor (Amarillo/Naranja) -->
+                 <div class="row row-cols-1 row-cols-md-3 g-4">
+                    {% if user.rol == 'conductor' %}
+                        <div class="col">
+                            <a href="{% url 'conductor_dashboard' %}" class="card-link text-decoration-none h-100 d-block service-card">
+                                <div class="card shadow-lg h-100 border-warning border-3 hover-lift">
+                                    <div class="card-body text-center p-4">
+                                        <i class="bi bi-car-front-fill text-warning display-5 mb-2"></i>
+                                        <h3 class="card-title text-warning">Viajes y Asistencia</h3>
+                                        <p class="card-text text-muted">Aceptar solicitudes de transporte.</p>
+                                    </div>
+                                </div>
+                            </a>
+                        </div>
+                    {% endif %}
+                    
+                    {% if user.rol == 'repartidor_domicilios' %}
+                        <div class="col">
+                            <a href="{% url 'repartidor_dashboard' %}" class="card-link text-decoration-none h-100 d-block service-card">
+                                <div class="card shadow-lg h-100 border-warning border-3 hover-lift">
+                                    <div class="card-body text-center p-4">
+                                        <i class="bi bi-basket-fill text-warning display-5 mb-2"></i>
+                                        <h3 class="card-title text-warning">Pedidos de Domicilios</h3>
+                                        <p class="card-text text-muted">Ver y recoger pedidos listos.</p>
+                                    </div>
+                                </div>
+                            </a>
+                        </div>
+                    {% endif %}
+                </div>
+
+            {% elif user.rol == 'cliente' %}
+                <h2 class="text-yummy-dark-green mb-4">Selección de Servicio 📲</h2>
+                <p class="lead">Elige el servicio que deseas utilizar hoy.</p>
+                
+                <!-- Tarjetas de Cliente (Colores Vivos) -->
+                <div class="row row-cols-1 row-cols-md-3 g-4 mt-4">
+                    
+                    <div class="col">
+                        <!-- Asumo 'solicitar_viaje' está en la app 'transporte' -->
+                        <a href="{% url 'transporte:solicitar_viaje' %}" class="card-link text-decoration-none h-100 d-block service-card">
+                            <div class="card shadow-lg h-100 border-primary border-3 hover-lift">
+                                <div class="card-body text-center p-4">
+                                    <i class="bi bi-car-front-fill text-primary display-4 mb-3"></i>
+                                    <h3 class="card-title text-primary fw-bold">Transporte</h3>
+                                    <p class="card-text text-muted">Solicita un viaje personal.</p>
+                                </div>
+                            </div>
+                        </a>
+                    </div>
+                    
+                    <div class="col">
+                        <!-- Asumo 'comercio_list' está en la app 'domicilios' -->
+                        <a href="{% url 'domicilios:comercio_list' %}" class="card-link text-decoration-none h-100 d-block service-card">
+                            <div class="card shadow-lg h-100 border-success border-3 hover-lift">
+                                <div class="card-body text-center p-4">
+                                    <i class="bi bi-basket-fill text-success display-4 mb-3"></i>
+                                    <h3 class="card-title text-success fw-bold">Domicilios</h3>
+                                    <p class="card-text text-muted">Pide comida, súper o farmacia.</p>
+                                </div>
+                            </div>
+                        </a>
+                    </div>
+                    
+                    <div class="col">
+                         <!-- Asumo 'solicitar_asistencia' está en la app 'transporte' -->
+                        <a href="{% url 'transporte:solicitar_asistencia' %}" class="card-link text-decoration-none h-100 d-block service-card">
+                            <div class="card shadow-lg h-100 border-warning border-3 hover-lift">
+                                <div class="card-body text-center p-4">
+                                    <i class="bi bi-tools text-warning display-4 mb-3"></i>
+                                    <h3 class="card-title text-warning fw-bold">Asistencia Vial</h3>
+                                    <p class="card-text text-muted">Solicita grúa, gasolina o ayuda.</p>
+                                </div>
+                            </div>
+                        </a>
+                    </div>
+                </div>
+
+            {% else %}
+                <p class="text-danger">Tu cuenta está activa, pero tu rol ({{ user.rol }}) no tiene un dashboard asignado. Contacta a soporte.</p>
+            {% endif %}
+
+        </div>
+    {% endif %}
+</div>
+{% endblock %}

@@ -1,0 +1,40 @@
+{% extends "base.html" %}
+
+{% block title %}Solicitar un Viaje{% endblock %}
+
+{% block content %}
+    <div class="form-container">
+        <h1>Solicitar un Viaje 🗺️</h1>
+        <p>Ingresa los puntos de recogida y destino para encontrar un conductor. (Nota: en un proyecto real, usarías un mapa interactivo).</p>
+
+        {% if messages %}
+            <ul class="messages">
+                {% for message in messages %}
+                    <li{% if message.tags %} class="{{ message.tags }}"{% endif %}>{{ message }}</li>
+                {% endfor %}
+            </ul>
+        {% endif %}
+        
+        <form method="post">
+            {% csrf_token %}
+            
+            {% if form.non_field_errors %}
+                <div style="color: red; margin-bottom: 15px;">
+                    {% for error in form.non_field_errors %}
+                        <p>{{ error }}</p>
+                    {% endfor %}
+                </div>
+            {% endif %}
+
+            {{ form.as_p }}
+
+            <button type="submit" style="background-color: #007bff; color: white; padding: 10px 15px; border: none; border-radius: 5px; cursor: pointer; width: 100%;">
+                Buscar Conductor
+            </button>
+        </form>
+
+        <p style="margin-top: 20px; text-align: center;">
+            <a href="{% url 'home' %}">Cancelar y volver al inicio</a>
+        </p>
+    </div>
+{% endblock %}

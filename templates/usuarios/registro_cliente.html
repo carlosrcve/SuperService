@@ -1,0 +1,88 @@
+{% extends "base.html" %}
+
+{% block title %}Registro de Cliente{% endblock %}
+
+{% block content %}
+<div class="container py-5">
+    <div class="row justify-content-center">
+        <div class="col-md-8 col-lg-7">
+            <!-- Tarjeta de Registro con estilo Yummy -->
+            <div class="card shadow-lg border-0" style="border-radius: 15px;">
+                <div class="card-header text-center py-4" style="background-color: var(--yummy-dark-green); border-top-left-radius: 15px; border-top-right-radius: 15px;">
+                    <i class="bi bi-person-plus-fill text-white display-5 mb-2"></i>
+                    <h2 class="h3 text-white fw-bold mb-0">Regístrate como Cliente</h2>
+                </div>
+                <div class="card-body p-4 p-md-5">
+                    <p class="text-center text-muted mb-4">Crea tu cuenta para empezar a pedir todos nuestros servicios.</p>
+                    
+                    <form method="post" class="row g-4">
+                        {% csrf_token %}
+                        
+                        <!-- Errores de campo (sección superior) -->
+                        {% for field in form %}
+                            {% if field.errors %}
+                                <div class="col-12">
+                                    <div class="alert alert-warning py-2 small" role="alert">
+                                        <strong>{{ field.label }}:</strong> 
+                                        {% for error in field.errors %}
+                                            {{ error }}
+                                        {% endfor %}
+                                    </div>
+                                </div>
+                            {% endif %}
+                        {% endfor %}
+
+                        <!-- Campos del formulario -->
+                        {% for field in form %}
+                            <div class="col-md-6">
+                                <label for="{{ field.id_for_label }}" class="form-label fw-bold">{{ field.label }}</label>
+                                {{ field }}
+                                <!-- Nota: Los errores se manejaron arriba para un diseño limpio -->
+                            </div>
+                        {% endfor %}
+                        
+                        <div class="col-12">
+                            <!-- Botón de Registro con estilo Yummy -->
+                            <button type="submit" class="btn btn-lg w-100 fw-bold mt-4" style="background-color: var(--yummy-green); color: white; border-radius: 10px;">
+                                <i class="bi bi-person-check-fill me-2"></i> Crear Cuenta Cliente
+                            </button>
+                        </div>
+                    </form>
+                    
+                    <hr class="my-4">
+                    
+                    <p class="text-center mb-0">
+                        ¿Ya tienes cuenta? 
+                        <a href="{% url 'login' %}" class="fw-bold" style="color: var(--yummy-green);">Inicia Sesión aquí</a>
+                    </p>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Pequeño ajuste de CSS para que los campos de formulario se vean bien con Bootstrap 5 -->
+<style>
+    /* Asegurar que los inputs se vean bien en registro_cliente.html */
+    .card-body input[type="text"], 
+    .card-body input[type="password"],
+    .card-body input[type="email"] {
+        width: 100%;
+        padding: 10px 15px;
+        border: 1px solid #ccc;
+        border-radius: 8px;
+        transition: border-color 0.2s;
+    }
+    .card-body input[type="text"]:focus, 
+    .card-body input[type="password"]:focus,
+    .card-body input[type="email"]:focus {
+        border-color: var(--yummy-green);
+        outline: none;
+        box-shadow: 0 0 0 0.25rem rgba(55, 150, 84, 0.25); /* Sombra verde sutil */
+    }
+    .invalid-feedback {
+        color: var(--bs-danger);
+        font-size: 0.875em;
+    }
+</style>
+{% endblock %}

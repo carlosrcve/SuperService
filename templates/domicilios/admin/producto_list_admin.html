@@ -1,0 +1,40 @@
+{% extends "base.html" %}
+
+{% block title %}Productos de {{ comercio.nombre }}{% endblock %}
+
+{% block content %}
+    <a href="{% url 'admin_comercio_list' %}">⬅️ Volver a la Gestión de Comercios</a>
+    <h1>Productos de {{ comercio.nombre }}</h1>
+    
+    <a href="{% url 'admin_producto_crear' comercio_id=comercio.id %}" style="background-color: #28a745; color: white; padding: 10px 15px; text-decoration: none; border-radius: 5px; margin-bottom: 20px; display: inline-block;">
+        ➕ Agregar Nuevo Producto
+    </a>
+
+    <table border="1" style="width: 100%; border-collapse: collapse; margin-top: 20px;">
+        <thead>
+            <tr style="background-color: #f0f0f0;">
+                <th style="padding: 10px;">ID</th>
+                <th style="padding: 10px;">Nombre</th>
+                <th style="padding: 10px;">Precio</th>
+                <th style="padding: 10px;">Disponible</th>
+                <th style="padding: 10px;">Acciones</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for producto in productos %}
+                <tr>
+                    <td style="padding: 8px;">#{{ producto.id }}</td>
+                    <td style="padding: 8px;">{{ producto.nombre }}</td>
+                    <td style="padding: 8px;">${{ producto.precio|floatformat:2 }}</td>
+                    <td style="padding: 8px; color: {% if producto.disponible %}green{% else %}red{% endif %};">
+                        {{ producto.disponible|yesno:"Sí,No" }}
+                    </td>
+                    <td style="padding: 8px;">
+                        <a href="#">Editar</a> | 
+                        <a href="#" style="color: red;">Eliminar</a>
+                    </td>
+                </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+{% endblock %}

@@ -1,0 +1,317 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}Detalle de Viaje #{{ viaje.id }}{% endblock %}
+
+{% block content %}
+<div class="container py-4">
+
+    {# Título principal con color de Bootstrap primary #}
+    <h1 class="mb-4 text-primary">
+        <i class="bi bi-geo-alt-fill me-2"></i> Detalle del Viaje #{{ viaje.id }}
+    </h1>
+
+    <div class="row">
+        
+        {# Columna Principal de Información (Estado, Tarifas, Fechas) #}
+        <div class="col-lg-7 mb-4">
+            <div class="card shadow-sm border-0 h-100">
+                <div class="card-body">
+                    
+                    {# Estado Actual #}
+                    <h3 class="card-title border-bottom pb-2 mb-3">
+                        Estado Actual: 
+                        <span class="badge 
+                            {% if viaje.estado == 'Completado' %}text-bg-success
+                            {% elif viaje.estado == 'Cancelado' %}text-bg-danger
+                            {% elif viaje.estado == 'En Curso' %}text-bg-warning
+                            {% else %}text-bg-primary
+                            {% endif %} 
+                            fs-5 fw-bold ms-2">
+                            {{ viaje.estado }}
+                        </span>
+                    </h3>
+
+                    <p class="lead"><strong>Solicitado:</strong> {{ viaje.fecha|date:"d M Y" }} a las {{ viaje.hora|time:"h:i A" }}</p>
+
+                    <div class="row mt-4">
+                        <div class="col-6">
+                            <p class="mb-1 text-muted">Tarifa Estimada:</p>
+                            <p class="h4 fw-bold text-info">${{ viaje.tarifa_estimada|floatformat:2|default:"N/A" }}</p>
+                        </div>
+                        {% if viaje.tarifa_final %}
+                        <div class="col-6 border-start">
+                            <p class="mb-1 text-muted">Tarifa Final Cobrada:</p>
+                            <p class="h3 fw-bolder text-success">${{ viaje.tarifa_final|floatformat:2 }}</p>
+                        </div>
+                        {% endif %}
+                    </div>
+
+                    <hr>
+
+                    {# Fechas de Etapas #}
+                    <p class="mb-1"><i class="bi bi-clock-fill me-1 text-success"></i> <strong>Iniciado:</strong> 
+                        {{ viaje.iniciado_en|date:"d M Y h:i A"|default:"Pendiente" }}</p>
+                    <p><i class="bi bi-flag-fill me-1 text-danger"></i> <strong>Finalizado:</strong> 
+                        {{ viaje.finalizado_en|date:"d M Y h:i A"|default:"Pendiente" }}</p>
+
+                </div>
+            </div>
+        </div>
+
+        {# Columna Lateral de Cliente y Conductor #}
+        <div class="col-lg-5 mb-4">
+            <div class="row g-4">
+                {# Info Cliente #}
+                <div class="col-12">
+                    <div class="card bg-light border-primary border-2 h-100">
+                        <div class="card-body">
+                            <h4 class="card-title text-primary"><i class="bi bi-person-circle me-2"></i> Cliente</h4>
+                            <p class="mb-1"><strong>Nombre:</strong> {{ viaje.cliente.get_full_name|default:viaje.cliente.username }}</p>
+                            <p class="mb-0"><strong>Contacto:</strong> {{ viaje.cliente.telefono|default:"No disponible" }}</p>
+                        </div>
+                    </div>
+                </div>
+                
+                {# Info Conductor #}
+                <div class="col-12">
+                    <div class="card border-success border-2 h-100">
+                        <div class="card-body">
+                            <h4 class="card-title text-success"><i class="bi bi-car-front-fill me-2"></i> Conductor Asignado</h4>
+                            {% if viaje.conductor %}
+                                <p class="mb-1"><strong>Nombre:</strong> {{ viaje.conductor.get_full_name|default:viaje.conductor.username }}</p>
+                                <p class="mb-1"><strong>Vehículo:</strong> {{ viaje.vehiculo_usado.modelo|default:"N/A" }}</p>
+                                <p class="mb-0"><strong>Placa:</strong> <span class="fw-bold text-success">{{ viaje.vehiculo_usado.placa|default:"N/A" }}</span></p>
+                            {% else %}
+                                <p class="text-warning fw-bold mb-0"><i class="bi bi-exclamation-triangle-fill me-1"></i> Conductor aún no asignado o confirmado.</p>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+    </div>
+
+    {# Detalles de la Ruta (Opcional: Si tienes un mapa, iría aquí) #}
+    <div class="card shadow-sm mb-4">
+        <div class="card-body">
+            <h3 class="card-title"><i class="bi bi-map-fill me-2"></i> Detalles de la Ruta</h3>
+            <div class="row">
+                <div class="col-md-6">
+                    <p class="mb-1"><strong>Origen:</strong> Lat: {{ viaje.origen_lat|default:"N/A" }}, Lon: {{ viaje.origen_lon|default:"N/A" }}</p>
+                </div>
+                <div class="col-md-6">
+                    <p class="mb-1"><strong>Destino:</strong> Lat: {{ viaje.destino_lat|default:"N/A" }}, Lon: {{ viaje.destino_lon|default:"N/A" }}</p>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    {# Botón Volver #}
+    <a href="{% url 'home' %}" class="btn btn-secondary mb-4"><i class="bi bi-arrow-left-circle-fill me-2"></i> Volver a la Página Principal</a>
+
+    <hr class="my-4">
+
+    {# ---------------------------------------------------- #}
+    {# CHAT SECTION (Unificada y con Bootstrap) #}
+    {# ---------------------------------------------------- #}
+    <div class="card shadow-lg mx-auto" style="max-width: 600px;">
+        <div class="card-header bg-primary text-white">
+            <h5 class="mb-0"><i class="bi bi-chat-dots-fill me-2"></i> Chat del Viaje</h5>
+        </div>
+        
+        {# Historial de Mensajes #}
+        <div class="card-body" id="chat-history" style="max-height: 350px; overflow-y: scroll; background-color: #f7f9fc;">
+            {% for mensaje in mensajes %}
+                {# Clases para burbujas de chat #}
+                <div class="d-flex 
+                    {% if mensaje.emisor == request.user %}justify-content-end{% else %}justify-content-start{% endif %} mb-2">
+                    <div class="p-2 rounded 
+                        {% if mensaje.emisor == request.user %}bg-success text-white{% else %}bg-light border{% endif %}" 
+                        style="max-width: 85%;">
+                        
+                        <small class="d-block mb-1 opacity-75 
+                            {% if mensaje.emisor == request.user %}text-white{% else %}text-muted{% endif %}">
+                            {% if mensaje.emisor == request.user %}Tú{% else %}{{ mensaje.emisor.username }}{% endif %}
+                            - {{ mensaje.timestamp|date:"h:i A" }}
+                        </small>
+                        <p class="mb-0">{{ mensaje.contenido }}</p>
+                    </div>
+                </div>
+            {% empty %}
+                <p class="text-center text-muted mt-5">Aún no hay mensajes en este viaje.</p>
+            {% endfor %}
+        </div>
+        
+        {# Formulario de Envío de Mensajes #}
+        <div class="card-footer bg-light">
+            <form method="post" id="chat-form">
+                {% csrf_token %}
+                
+                {# Mensaje de error (si aplica) #}
+                {% if mensaje_form.errors %}
+                    <div class="alert alert-danger" role="alert">
+                        Error al enviar mensaje: {{ mensaje_form.contenido.errors }}
+                    </div>
+                {% endif %}
+
+                <div class="input-group">
+                    {# CAMPO DE TEXTO CORREGIDO: Usamos ID estático para que JS lo encuentre #}
+                    <textarea class="form-control" 
+                            name="contenido" 
+                            id="id_contenido" 
+                            placeholder="Escribe tu mensaje..."
+                            rows="1"></textarea>
+                            
+                    {# Eliminamos el input oculto que no es necesario #}
+                    <button id="chat-message-submit" type="button" class="btn btn-primary">
+                        <i class="bi bi-send-fill"></i> Enviar
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+</div>
+{% endblock %}
+
+<hr>
+
+{% block extra_js %}
+<script>
+    // 🚩 1. DEFINICIÓN GLOBAL INMEDIATA 
+    window.chatModule = window.chatModule || {}; 
+    
+    // Declaramos las variables principales en el scope del script
+    let chatSocket = null;
+    let chatHistory = null;
+    let formContent = null;
+    
+    // Elementos del DOM
+    function getElements() {
+        // Buscamos los ID fijos
+        chatHistory = document.querySelector('#chat-history');
+        formContent = document.querySelector('#id_contenido'); 
+        
+        if (!formContent || !chatHistory) {
+            console.error("ERROR: Faltan elementos críticos del chat.");
+            return false;
+        }
+        return true;
+    }
+    
+    function scrollToBottom() {
+        if (chatHistory) {
+            chatHistory.scrollTop = chatHistory.scrollHeight;
+        }
+    }
+
+    // 4. FUNCIÓN DE ENVÍO
+    window.chatModule.sendMessage = function() { 
+        if (!getElements()) return; // Re-check
+        const message = formContent.value; 
+        
+        if (!chatSocket || message.trim() === "" || chatSocket.readyState !== 1) {
+            if (chatSocket && chatSocket.readyState !== 1) {
+                console.error("WebSocket no está abierto. Estado actual:", chatSocket.readyState);
+            } else if (!chatSocket) {
+                console.error("WebSocket no inicializado.");
+            }
+            return; 
+        }
+
+        chatSocket.send(JSON.stringify({
+            'message': message
+        }));
+        
+        formContent.value = ''; 
+    }
+
+    // El código de conexión e inicialización se ejecuta una vez que el DOM está listo
+    document.addEventListener('DOMContentLoaded', function() {
+        // 1. Usar el valor dinámico de Django
+        const viajeId = "{{ viaje.id }}"; 
+        
+        // Comprobamos si los elementos existen (Ahora debería pasar)
+        if (!getElements()) return;
+
+        // 2. Conexión WebSocket
+        chatSocket = new WebSocket(
+            'ws://127.0.0.1:8081' + '/ws/viaje/' + viajeId + '/' 
+        );
+
+        chatSocket.onopen = function(e) {
+            console.log("Conexión WebSocket para Viaje abierta.");
+            scrollToBottom();
+        };
+
+        chatSocket.onclose = function(e) {
+            console.log("Conexión WebSocket para Viaje cerrada inesperadamente.");
+        };
+
+        // 3. Manejo de Mensajes Recibidos (onmessage)
+        chatSocket.onmessage = function(e) {
+            const data = JSON.parse(e.data);
+            const message = data.message;
+            const username = data.username;
+            const isMe = data.is_me !== undefined ? data.is_me : (username === "{{ request.user.username }}");
+            const time = new Date().toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit' });
+            
+            // Lógica de inyección de burbujas...
+            const messageWrapper = document.createElement('div');
+            messageWrapper.classList.add('d-flex', isMe ? 'justify-content-end' : 'justify-content-start', 'mb-2');
+            
+            const messageBubble = document.createElement('div');
+            messageBubble.classList.add('p-2', 'rounded');
+            messageBubble.style.maxWidth = '85%';
+            messageBubble.classList.add(isMe ? 'bg-success' : 'bg-light');
+            messageBubble.classList.add(isMe ? 'text-white' : 'border');
+
+            const smallTag = document.createElement('small');
+            smallTag.classList.add('d-block', 'mb-1', 'opacity-75');
+            smallTag.classList.add(isMe ? 'text-white' : 'text-muted');
+            smallTag.textContent = (isMe ? 'Tú' : username) + ' - ' + time;
+            
+            const pTag = document.createElement('p');
+            pTag.classList.add('mb-0');
+            pTag.textContent = message;
+
+            messageBubble.appendChild(smallTag);
+            messageBubble.appendChild(pTag);
+            messageWrapper.appendChild(messageBubble);
+            chatHistory.appendChild(messageWrapper);
+            
+            scrollToBottom();
+        };
+
+        // 5. ASIGNACIÓN DE EVENTOS
+        const submitButton = document.querySelector('#chat-message-submit');
+
+        if (submitButton) {
+            submitButton.addEventListener('click', window.chatModule.sendMessage);
+        }
+
+        // Asignar Evento (Tecla Enter)
+        formContent.onkeyup = function(e) {
+            if (e.key === 'Enter' && !e.shiftKey) { 
+                e.preventDefault(); 
+                window.chatModule.sendMessage(); 
+            }
+        };
+        
+        scrollToBottom();
+    });
+    // (Reemplaza este código por donde inicializas los sockets)
+    chatSocket.onclose = function(e) {
+        console.error("Conexión WebSocket para Viaje cerrada inesperadamente.");
+        // Muestra un mensaje al usuario si la conexión se pierde
+        const alertDiv = document.createElement('div');
+        alertDiv.className = 'alert alert-warning text-center mt-3';
+        alertDiv.textContent = '⚠️ Conexión de chat perdida. Por favor, recarga la página.';
+        chatHistory.parentElement.insertBefore(alertDiv, chatHistory);
+    };
+
+    // ...
+</script>
+{% endblock %}

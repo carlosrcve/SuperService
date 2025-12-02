@@ -1,0 +1,195 @@
+{% extends "base.html" %}
+{% load static %}
+{% load humanize %} 
+{% load crispy_forms_tags %}
+
+{% block title %}Chat con {{ usuario_objetivo.get_full_name|default:usuario_objetivo.username }}{% endblock %}
+
+{% block content %}
+<div class="container py-4">
+
+    {# Título principal adaptado al Chat #}
+    <h1 class="mb-4 text-primary">
+        <i class="bi bi-chat-text-fill me-2"></i> Chat Directo con 
+        <span class="fw-bold">{{ usuario_objetivo.get_full_name|default:usuario_objetivo.username }}</span>
+    </h1>
+    
+    <p class="lead text-muted">Sala: <strong>{{ room_name_js }}</strong></p>
+
+    <hr class="my-4">
+
+    {# ---------------------------------------------------- #}
+    {# SECCIÓN DE CHAT (Adaptada del diseño de Pedidos) #}
+    {# ---------------------------------------------------- #}
+    <div class="card shadow-lg mx-auto" style="max-width: 600px;">
+        <div class="card-header bg-primary text-white">
+            <h5 class="mb-0"><i class="bi bi-person-fill-check me-2"></i> Conversación</h5>
+        </div>
+        
+        {# Historial de Mensajes (Zona con scroll) #}
+        <div class="card-body" id="chat-window" style="max-height: 500px; overflow-y: scroll; background-color: #f7f9fc;">
+            
+            {# Contenedor para mensajes de Django (Historial) #}
+            <div id="chat-log-django">
+                {% for mensaje in historial %}
+                    {# Burbujas de chat con estilo Bootstrap #}
+                    <div class="d-flex 
+                        {% if mensaje.autor == request.user %}justify-content-end{% else %}justify-content-start{% endif %} mb-2">
+                        <div class="p-2 rounded 
+                            {% if mensaje.autor == request.user %}bg-success text-white{% else %}bg-light border{% endif %}" 
+                            style="max-width: 85%;">
+                            
+                            <small class="d-block mb-1 opacity-75 
+                                {% if mensaje.autor == request.user %}text-white{% else %}text-muted{% endif %}">
+                                {% if mensaje.autor == request.user %}Tú{% else %}{{ mensaje.autor.username }}{% endif %}
+                                - {{ mensaje.timestamp|date:"h:i A" }}
+                            </small>
+                            <p class="mb-0">{{ mensaje.contenido }}</p>
+                        </div>
+                    </div>
+                {% empty %}
+                    <p class="text-center text-muted mt-5">Inicia una conversación con {{ usuario_objetivo.username }}.</p>
+                {% endfor %}
+            </div>
+            
+            {# Contenedor para mensajes de WebSocket (en tiempo real) #}
+            <div id="chat-log-websocket" style="clear: both;"></div> 
+        </div>
+        
+        {# Formulario de Envío de Mensajes (Pie de Tarjeta) #}
+        <div class="card-footer bg-light">
+            <div class="input-group">
+                <input type="text" 
+                    class="form-control" 
+                    id="chat-message-input" 
+                    placeholder="Escribe tu mensaje..."
+                    autocomplete="off" 
+                    rows="1">
+                
+                <button id="chat-message-submit" type="button" class="btn btn-primary">
+                    <i class="bi bi-send-fill"></i> Enviar
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    // 1. Variables de Contexto y DOM
+    // 🟢 CORRECCIÓN: Eliminamos JSON.parse. La variable ya es una cadena.
+    const roomName = "{{ room_name_js|safe }}"; 
+    
+    // Elementos del DOM
+    const chatWindow = document.querySelector('#chat-window'); 
+    const chatLogWebsocket = document.querySelector('#chat-log-websocket');
+    const messageInput = document.querySelector('#chat-message-input'); 
+    const submitButton = document.querySelector('#chat-message-submit');
+    const wsPort = "8081"; // Puerto de Daphne/Channels (Verifica que sea el correcto)
+
+    // Función para desplazarse al final del chat
+    function scrollToBottom() {
+        if (chatWindow) {
+            chatWindow.scrollTop = chatWindow.scrollHeight; 
+        }
+    }
+    
+    // 2. Conexión WebSocket
+    const chatSocket = new WebSocket(
+        // Construcción de la URL: ws://127.0.0.1:8081/ws/chat/chat_1_3/
+        'ws://' + window.location.hostname + ':' + wsPort + '/ws/chat/' + roomName + '/'
+    );
+
+    // ----------------------------------------------------
+    // Eventos del WebSocket
+    // ----------------------------------------------------
+
+    chatSocket.onopen = function(e) {
+        console.log(`✅ Conexión WebSocket abierta para la sala: ${roomName}`);
+        scrollToBottom(); 
+    };
+
+    chatSocket.onclose = function(e) {
+        console.error("❌ Conexión WebSocket cerrada inesperadamente.");
+    };
+
+    // 3. Manejo de Mensajes Recibidos (Inyección con estilo de burbuja de Bootstrap)
+    chatSocket.onmessage = function(e) {
+        const data = JSON.parse(e.data);
+        const message = data.message;
+        const username = data.username;
+        const isMe = data.is_me; // Viene del Consumer
+        const time = data.timestamp; // Usamos el timestamp generado por el Consumer/Servidor
+        
+        // --- Lógica de la burbuja (Estilo Bootstrap) ---
+        const messageWrapper = document.createElement('div');
+        // Usa justify-content-end para 'Tú' (isMe)
+        messageWrapper.classList.add('d-flex', isMe ? 'justify-content-end' : 'justify-content-start', 'mb-2');
+        
+        const messageBubble = document.createElement('div');
+        messageBubble.classList.add('p-2', 'rounded');
+        messageBubble.style.maxWidth = '85%';
+        // Usa bg-success para 'Tú' (isMe)
+        messageBubble.classList.add(isMe ? 'bg-success' : 'bg-light');
+        messageBubble.classList.add(isMe ? 'text-white' : 'border');
+
+        const smallTag = document.createElement('small');
+        smallTag.classList.add('d-block', 'mb-1', 'opacity-75');
+        smallTag.classList.add(isMe ? 'text-white' : 'text-muted');
+        smallTag.textContent = (isMe ? 'Tú' : username) + ' - ' + time;
+        
+        const pTag = document.createElement('p');
+        pTag.classList.add('mb-0');
+        pTag.textContent = message;
+
+        messageBubble.appendChild(smallTag);
+        messageBubble.appendChild(pTag);
+        messageWrapper.appendChild(messageBubble);
+        
+        chatLogWebsocket.appendChild(messageWrapper);
+        
+        scrollToBottom();
+    };
+
+    // 4. Función de Envío del Mensaje (Lógica revisada)
+    function sendMessage() {
+        if (!messageInput) return;
+        
+        // 🚩 CRÍTICO: Capturar el valor y eliminar espacios en blanco al inicio/final
+        const message = messageInput.value.trim(); 
+        
+        if (message === "" || chatSocket.readyState !== WebSocket.OPEN) {
+             // Logs de diagnóstico
+             if (message === "") console.log("Advertencia: Intento de enviar mensaje vacío. Input: ", messageInput.value);
+             if (chatSocket.readyState !== WebSocket.OPEN) console.error("WebSocket no está listo para enviar. Estado: " + chatSocket.readyState);
+             return;
+        } 
+        
+        chatSocket.send(JSON.stringify({
+            'message': message 
+        }));
+        
+        messageInput.value = ''; // Limpiar el campo
+        scrollToBottom(); // Mueve el scroll inmediatamente
+    }
+
+    // 5. Asignar Eventos (Clic en botón y tecla Enter)
+    if (submitButton) {
+        submitButton.onclick = sendMessage; 
+    }
+
+    if (messageInput) {
+        messageInput.onkeyup = function(e) {
+            // Se envía con 'Enter', pero se ignora si se presiona 'Shift' (para permitir saltos de línea)
+            if (e.key === 'Enter' && !e.shiftKey) { 
+                e.preventDefault(); 
+                sendMessage();
+            }
+        };
+    }
+    
+    // Desplazamiento al cargar el DOM (historial de Django)
+    document.addEventListener('DOMContentLoaded', scrollToBottom);
+</script>
+{% endblock %}

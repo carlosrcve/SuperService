@@ -1,0 +1,92 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Lista de Usuarios para Chat</title>
+    <style>
+        body { font-family: 'Inter', sans-serif; background-color: #f8f9fa; margin: 0; padding: 20px; color: #343a40; }
+        .container { max-width: 800px; margin: 0 auto; background: white; padding: 30px; border-radius: 12px; box-shadow: 0 4px 15px rgba(0,0,0,0.08); }
+        h1 { color: #007bff; border-bottom: 2px solid #007bff; padding-bottom: 10px; margin-bottom: 20px; }
+        .user-list { list-style: none; padding: 0; }
+        .user-item { 
+            display: flex; 
+            justify-content: space-between; 
+            align-items: center; 
+            padding: 15px; 
+            margin-bottom: 10px; 
+            background: #e9f7ff; /* Fondo más claro */
+            border-radius: 8px; 
+            border-left: 5px solid #007bff;
+            transition: background-color 0.3s;
+        }
+        .user-item:hover {
+            background-color: #d8ecf9;
+        }
+        .user-info {
+            flex-grow: 1;
+        }
+        .user-name {
+            font-weight: bold;
+            font-size: 1.1em;
+            color: #343a40;
+        }
+        .user-role {
+            font-size: 0.9em;
+            color: #6c757d;
+        }
+        .chat-button {
+            background-color: #28a745;
+            color: white;
+            padding: 8px 15px;
+            border: none;
+            border-radius: 25px;
+            text-decoration: none;
+            font-weight: 600;
+            transition: background-color 0.2s, transform 0.1s;
+        }
+        .chat-button:hover {
+            background-color: #1e7e34;
+            transform: translateY(-1px);
+        }
+        .no-users {
+            padding: 20px;
+            text-align: center;
+            color: #dc3545;
+            border: 1px dashed #dc3545;
+            border-radius: 8px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Usuarios Disponibles para Chatear</h1>
+
+        <p>Selecciona un usuario para iniciar una conversación:</p>
+
+        {% if usuarios_chat %}
+            <ul class="user-list">
+                {% for user in usuarios_chat %}
+                    <li class="user-item">
+                        <div class="user-info">
+                            <div class="user-name">{{ user.get_full_name|default:user.username }}</div>
+                            <div class="user-role">Rol: {{ user.get_rol_display }}</div>
+                        </div>
+                        <a href="{% url 'chat_room' user.pk %}" class="chat-button">
+                            Iniciar Chat
+                        </a>
+                    </li>
+                {% endfor %}
+            </ul>
+        {% else %}
+            <div class="no-users">
+                <p>No hay otros usuarios disponibles para chatear en este momento.</p>
+                <p>Tu ID de Usuario: <strong>{{ current_user_id }}</strong></p>
+            </div>
+        {% endif %}
+        
+        <p style="margin-top: 20px; text-align: center;"><a href="{% url 'home' %}" style="color: #007bff;">&larr; Volver a la página principal</a></p>
+
+    </div>
+</body>
+</html>

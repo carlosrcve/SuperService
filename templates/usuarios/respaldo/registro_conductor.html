@@ -1,0 +1,96 @@
+{% extends "base.html" %}
+
+{% block title %}Registro de Proveedor de Servicios{% endblock %}
+
+{% block content %}
+    <div class="form-container" style="max-width: 500px; margin: 0 auto; padding: 20px; border: 1px solid #ddd; border-radius: 8px;">
+        <h1 style="color: orange; text-align: center;">Regístrate como Conductor o Repartidor 💼</h1>
+        <p style="text-align: center; color: #555;">Completa este formulario para ofrecer servicios en SuperService. Tu cuenta requerirá **aprobación administrativa**.</p>
+
+        {% if messages %}
+            <ul class="messages" style="list-style: none; padding: 0;">
+                {% for message in messages %}
+                    <li style="color: red; border: 1px solid red; padding: 10px; margin-bottom: 10px; border-radius: 4px; background-color: #fdd;">{{ message }}</li>
+                {% endfor %}
+            </ul>
+        {% endif %}
+        
+        <form method="post">
+            {% csrf_token %}
+            
+            {% if form.non_field_errors %}
+                <div style="color: red; border: 1px solid red; padding: 10px; margin-bottom: 15px; border-radius: 4px;">
+                    <strong>Se encontraron errores en el formulario:</strong>
+                    <ul>
+                        {% for error in form.non_field_errors %}
+                            <li>{{ error }}</li>
+                        {% endfor %}
+                    </ul>
+                </div>
+            {% endif %}
+
+            <h3 style="border-bottom: 1px solid #ccc; padding-bottom: 5px; margin-top: 20px;">Datos de Acceso</h3>
+            
+            <div class="form-field-group" style="margin-bottom: 15px;">
+                {{ form.username.label_tag }}
+                {{ form.username }}
+                <div style="color: red; font-size: 0.9em;">{{ form.username.errors }}</div>
+            </div>
+
+            <div class="form-field-group" style="margin-bottom: 15px;">
+                {{ form.first_name.label_tag }}
+                {{ form.first_name }}
+                <div style="color: red; font-size: 0.9em;">{{ form.first_name.errors }}</div>
+            </div>
+            
+            <div class="form-field-group" style="margin-bottom: 15px;">
+                {{ form.last_name.label_tag }}
+                {{ form.last_name }}
+                <div style="color: red; font-size: 0.9em;">{{ form.last_name.errors }}</div>
+            </div>
+            
+            <div class="form-field-group" style="margin-bottom: 15px;">
+                {{ form.email.label_tag }}
+                {{ form.email }}
+                <div style="color: red; font-size: 0.9em;">{{ form.email.errors }}</div>
+            </div>
+
+            <div class="form-field-group" style="margin-bottom: 15px;">
+                {{ form.password1.label_tag }}  
+                {{ form.password1 }}           
+                <div style="color: red; font-size: 0.9em;">{{ form.password1.errors }}</div> 
+            </div>
+
+            <div class="form-field-group" style="margin-bottom: 15px;">
+                {{ form.password2.label_tag }}
+                {{ form.password2 }}
+                <div style="color: red; font-size: 0.9em;">{{ form.password2.errors }}</div>
+            </div>
+
+
+            <h3 style="border-bottom: 1px solid #ccc; padding-top: 20px; padding-bottom: 5px;">Tipo de Servicio y Documentación</h3>
+            
+            <div class="form-field-group" style="margin-bottom: 15px;">
+                {{ form.rol.label_tag }}
+                {{ form.rol }}
+                <div style="color: red; font-size: 0.9em;">{{ form.rol.errors }}</div>
+            </div>
+            
+            <div class="form-field-group" style="margin-bottom: 15px;">
+                {{ form.licencia.label_tag }}
+                {{ form.licencia }}
+                <small style="display: block; color: #666;">{{ form.licencia.help_text|default:"Necesario para verificación y aprobación del administrador." }}</small>
+                <div style="color: red; font-size: 0.9em;">{{ form.licencia.errors }}</div>
+            </div>
+
+
+            <button type="submit" style="background-color: orange; color: white; padding: 12px 15px; border: none; border-radius: 5px; cursor: pointer; width: 100%; margin-top: 25px;">
+                ➡️ Enviar Solicitud de Registro
+            </button>
+        </form>
+
+        <p style="margin-top: 20px; text-align: center;">
+            ¿Solo quieres usar los servicios? <a href="{% url 'registro_cliente' %}">Regístrate como Cliente</a>.
+        </p>
+    </div>
+{% endblock %}

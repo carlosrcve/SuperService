@@ -1,0 +1,302 @@
+{% extends "base.html" %}
+{% load static %}
+{% load crispy_forms_tags %}
+{% load humanize %} 
+
+{% block title %}Detalle del Pedido #{{ pedido.id }}{% endblock %}
+
+{% block content %}
+<div class="container py-4">
+
+    {# Título principal con color de Bootstrap primary #}
+    <h1 class="mb-4 text-primary">
+        <i class="bi bi-basket-fill me-2"></i> Detalle del Pedido #{{ pedido.id }}
+    </h1>
+
+    <div class="row">
+        
+        {# Columna Principal de Información (Estado, Totales, Fechas) #}
+        <div class="col-lg-7 mb-4">
+            <div class="card shadow-sm border-0 h-100">
+                <div class="card-body">
+                    
+                    {# Estado Actual #}
+                    <h3 class="card-title border-bottom pb-2 mb-3">
+                        Estado Actual: 
+                        <span class="badge 
+                            {% if pedido.estado == 'Entregado' %}text-bg-success
+                            {% elif pedido.estado == 'Cancelado' %}text-bg-danger
+                            {% elif pedido.estado == 'En Camino' %}text-bg-warning
+                            {% else %}text-bg-primary
+                            {% endif %} 
+                            fs-5 fw-bold ms-2">
+                            {{ pedido.get_estado_display }}
+                        </span>
+                    </h3>
+
+                    <p class="lead"><strong>Comercio:</strong> {{ pedido.comercio.nombre }}</p>
+
+                    <div class="row mt-4">
+                        <div class="col-6">
+                            <p class="mb-1 text-muted">Subtotal:</p>
+                            <p class="h4 fw-bold text-info">${{ pedido.subtotal|floatformat:2|default:"N/A" }}</p>
+                        </div>
+                        <div class="col-6 border-start">
+                            <p class="mb-1 text-muted">Costo de Envío:</p>
+                            <p class="h4 fw-bold text-secondary">${{ pedido.costo_envio|floatformat:2|default:"0.00" }}</p>
+                        </div>
+                    </div>
+                    
+                    <div class="mt-3 p-3 bg-light rounded">
+                        <p class="mb-1 text-muted">Total Final del Pedido:</p>
+                        <p class="h3 fw-bolder text-success">${{ pedido.total_final|floatformat:2 }}</p>
+                    </div>
+
+                    <hr>
+
+                    {# Fechas de Etapas #}
+                    <p class="mb-1"><i class="bi bi-calendar-check me-1 text-success"></i> <strong>Solicitado:</strong> 
+                        {{ pedido.fecha_creacion|naturaltime }} ({{ pedido.fecha_creacion|date:"d M Y h:i A" }})</p>
+                    <p><i class="bi bi-box-seam-fill me-1 text-primary"></i> <strong>Iniciado/En Camino:</strong> 
+                        {% if pedido.fecha_asignacion %}{{ pedido.fecha_asignacion|date:"d M Y h:i A" }}{% else %}Pendiente{% endif %}</p>
+                    <p><i class="bi bi-check-circle-fill me-1 text-danger"></i> <strong>Entregado:</strong> 
+                        {% if pedido.fecha_entrega %}{{ pedido.fecha_entrega|date:"d M Y h:i A" }}{% else %}Pendiente{% endif %}</p>
+
+                </div>
+            </div>
+        </div>
+
+        {# Columna Lateral de Cliente y Repartidor #}
+        <div class="col-lg-5 mb-4">
+            <div class="row g-4">
+                {# Info Cliente #}
+                <div class="col-12">
+                    <div class="card bg-light border-primary border-2 h-100">
+                        <div class="card-body">
+                            <h4 class="card-title text-primary"><i class="bi bi-person-circle me-2"></i> Cliente</h4>
+                            <p class="mb-1"><strong>Nombre:</strong> {{ pedido.cliente.get_full_name|default:pedido.cliente.username }}</p>
+                            <p class="mb-0"><strong>Contacto:</strong> {{ pedido.cliente.telefono|default:"No disponible" }}</p>
+                            <p class="mt-2 mb-0"><strong>Dirección:</strong> {{ pedido.direccion_entrega }}</p>
+                        </div>
+                    </div>
+                </div>
+                
+                {# Info Repartidor #}
+                <div class="col-12">
+                    <div class="card border-success border-2 h-100">
+                        <div class="card-body">
+                            <h4 class="card-title text-success"><i class="bi bi-bicycle me-2"></i> Repartidor Asignado</h4>
+                            {% if pedido.repartidor %}
+                                <p class="mb-1"><strong>Nombre:</strong> {{ pedido.repartidor.get_full_name|default:pedido.repartidor.username }}</p>
+                                <p class="mb-0"><strong>Contacto:</strong> {{ pedido.repartidor.telefono|default:"N/A" }}</p>
+                            {% else %}
+                                <p class="text-warning fw-bold mb-0"><i class="bi bi-exclamation-triangle-fill me-1"></i> Repartidor aún no asignado.</p>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+    </div>
+
+    {# Detalles de los Productos #}
+    <div class="card shadow-sm mb-4">
+        <div class="card-body">
+            <h3 class="card-title"><i class="bi bi-list-check me-2"></i> Productos Solicitados</h3>
+            <ul class="list-group list-group-flush">
+                {% for item in items %}
+                    <li class="list-group-item d-flex justify-content-between align-items-center">
+                        <div>
+                            {{ item.cantidad }}x <strong>{{ item.producto.nombre }}</strong> 
+                            {% if item.producto.comercio %}
+                                <span class="text-muted small">({{ item.producto.comercio.nombre }})</span>
+                            {% endif %}
+                        </div>
+                        <span class="badge bg-secondary rounded-pill">${{ item.subtotal_item|floatformat:2 }}</span>
+                    </li>
+                {% empty %}
+                    <li class="list-group-item text-center text-muted">No hay productos en este pedido.</li>
+                {% endfor %}
+            </ul>
+        </div>
+    </div>
+    
+    {# Botón Volver (Ajusta la URL según necesites) #}
+    <a href="{% url 'home' %}" class="btn btn-secondary mb-4"><i class="bi bi-arrow-left-circle-fill me-2"></i> Volver</a>
+
+    <hr class="my-4">
+
+    {# ---------------------------------------------------- #}
+    {# CHAT SECTION (Diseño de Viaje) #}
+    {# ---------------------------------------------------- #}
+    <div class="card shadow-lg mx-auto" style="max-width: 600px;">
+        <div class="card-header bg-primary text-white">
+            <h5 class="mb-0"><i class="bi bi-chat-dots-fill me-2"></i> Chat del Pedido</h5>
+        </div>
+        
+        {# Historial de Mensajes #}
+        <div class="card-body" id="chat-window" style="max-height: 350px; overflow-y: scroll; background-color: #f7f9fc;">
+            {# Contenedor para mensajes de Django #}
+            <div id="chat-log-django">
+                {% for mensaje in mensajes %}
+                    {# Clases para burbujas de chat #}
+                    <div class="d-flex 
+                        {% if mensaje.emisor == request.user %}justify-content-end{% else %}justify-content-start{% endif %} mb-2">
+                        <div class="p-2 rounded 
+                            {% if mensaje.emisor == request.user %}bg-success text-white{% else %}bg-light border{% endif %}" 
+                            style="max-width: 85%;">
+                            
+                            <small class="d-block mb-1 opacity-75 
+                                {% if mensaje.emisor == request.user %}text-white{% else %}text-muted{% endif %}">
+                                {% if mensaje.emisor == request.user %}Tú{% else %}{{ mensaje.emisor.username }}{% endif %}
+                                - {{ mensaje.timestamp|date:"h:i A" }}
+                            </small>
+                            <p class="mb-0">{{ mensaje.contenido }}</p>
+                        </div>
+                    </div>
+                {% empty %}
+                    <p class="text-center text-muted mt-5">Aún no hay mensajes en este pedido.</p>
+                {% endfor %}
+            </div>
+            {# Contenedor para mensajes de WebSocket #}
+            <div id="chat-log-websocket" style="clear: both;"></div> 
+        </div>
+        
+        {# Formulario de Envío de Mensajes #}
+        <div class="card-footer bg-light">
+            {# No usamos un form de Django aquí ya que el envío es por JS/WS #}
+            <div class="input-group">
+                <input type="text" 
+                    class="form-control" 
+                    id="chat-message-input" 
+                    placeholder="Escribe tu mensaje..."
+                    autocomplete="off" 
+                    rows="1">
+                
+                <button id="chat-message-submit" type="button" class="btn btn-primary">
+                    <i class="bi bi-send-fill"></i> Enviar
+                </button>
+            </div>
+            {% if mensaje_form.errors %}
+                <div class="alert alert-danger mt-2" role="alert">
+                    Error al enviar mensaje: {{ mensaje_form.contenido.errors }}
+                </div>
+            {% endif %}
+        </div>
+    </div>
+
+</div>
+{% endblock %}
+{% block extra_js %}
+<script>
+    // 1. Obtener el ID del pedido del contexto de Django
+    const pedidoId = "{{ pedido.id }}"; 
+    const wsPort = "8081"; // Asegúrate de que el puerto de Daphne sea este
+    
+    // Elementos del DOM - ¡USAR EL ID CORRECTO!
+    const chatWindow = document.querySelector('#chat-window'); 
+    const chatLogWebsocket = document.querySelector('#chat-log-websocket');
+    const messageInput = document.querySelector('#chat-message-input');
+    const submitButton = document.querySelector('#chat-message-submit');
+
+    // Función para desplazarse al final del chat
+    function scrollToBottom() {
+        if (chatWindow) {
+            chatWindow.scrollTop = chatWindow.scrollHeight; 
+        }
+    }
+    
+    // 2. Conexión WebSocket al Consumer de Pedido
+    const chatSocket = new WebSocket(
+        'ws://' + window.location.hostname + ':' + wsPort + '/ws/pedido/' + pedidoId + '/'
+    );
+
+    // --- Eventos de Conexión ---
+    chatSocket.onopen = function(e) {
+        console.log("✅ Conexión WebSocket para Pedido abierta.");
+        scrollToBottom(); 
+    };
+
+    chatSocket.onclose = function(e) {
+        console.error("❌ Conexión WebSocket para Pedido cerrada inesperadamente.");
+    };
+
+    // 3. Manejo de Mensajes Recibidos (Inyección de burbuja)
+    chatSocket.onmessage = function(e) {
+        const data = JSON.parse(e.data);
+        const message = data.message;
+        const username = data.username;
+        const isMe = data.is_me;
+        // Si el Consumer envía el timestamp, úsalo. Si no, usa el del cliente (como haces aquí).
+        const time = new Date().toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit' });
+        
+        // Lógica de la burbuja (omitida aquí por brevedad, pero mantenida en tu código)
+        // ...
+        
+        // Reconstrucción del mensaje (Asegúrate que `chatLogWebsocket` existe)
+        if (chatLogWebsocket) {
+             const messageWrapper = document.createElement('div');
+             messageWrapper.classList.add('d-flex', isMe ? 'justify-content-end' : 'justify-content-start', 'mb-2');
+             const messageBubble = document.createElement('div');
+             // ... [Lógica de clases y estructura de la burbuja] ...
+             
+             // Por simplificar, solo inyectamos el texto:
+             messageWrapper.innerHTML = `
+                 <div class="p-2 rounded ${isMe ? 'bg-success text-white' : 'bg-light border'}" style="max-width: 85%;">
+                    <small class="d-block mb-1 opacity-75 ${isMe ? 'text-white' : 'text-muted'}">
+                        ${isMe ? 'Tú' : username} - ${time}
+                    </small>
+                    <p class="mb-0">${message}</p>
+                </div>
+            `;
+            chatLogWebsocket.appendChild(messageWrapper);
+        }
+
+        scrollToBottom();
+    };
+
+    // 4. Función de Envío del Mensaje (Con Debug)
+    function sendMessage() {
+        // 🚨 DEBUG CRÍTICO: Debe aparecer en la consola del navegador
+        console.log("--> FUNCIÓN SENDMESSAGE DISPARADA <--"); 
+
+        if (!messageInput) {
+            console.error("Error: El campo de texto del chat no está definido.");
+            return;
+        }
+        
+        const message = messageInput.value.trim();
+        // Usamos la constante estática WebSocket.OPEN (valor 1) para mayor claridad
+        if (message === "" || chatSocket.readyState !== WebSocket.OPEN) { 
+            if (message === "") console.warn("Advertencia: No se puede enviar un mensaje vacío.");
+            if (chatSocket.readyState !== WebSocket.OPEN) console.error("WebSocket no está listo para enviar. Estado: " + chatSocket.readyState);
+            return; 
+        }
+        
+        // 🚩 CRÍTICO: Envío de datos al Consumer
+        chatSocket.send(JSON.stringify({
+            'message': message
+        }));
+        
+        messageInput.value = ''; // Limpiar el campo
+    }
+
+    // 5. Asignar Eventos (Clic en botón y tecla Enter)
+    if (submitButton) {
+        submitButton.onclick = sendMessage;
+    }
+
+    if (messageInput) {
+        messageInput.onkeyup = function(e) {
+            if (e.key === 'Enter' && !e.shiftKey) { 
+                e.preventDefault(); 
+                sendMessage();
+            }
+        };
+    }
+    
+    // Asegurar que el scroll baje al cargar la página
+    document.addEventListener('DOMContentLoaded', scrollToBottom);
+</script>
+{% endblock %}

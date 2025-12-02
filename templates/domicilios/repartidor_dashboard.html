@@ -1,0 +1,74 @@
+{% extends "base.html" %}
+
+{% block title %}Dashboard de Repartidor{% endblock %}
+
+{% block content %}
+    <h1>Panel de Control de Repartidor 🚴</h1>
+    
+    {% if messages %}
+        <ul class="messages">
+            {% for message in messages %}
+                <li style="color: green;">{{ message }}</li>
+            {% endfor %}
+        </ul>
+    {% endif %}
+
+    <div class="dashboard-header" style="margin-bottom: 20px;">
+        <h2>Hola, {{ user.get_full_name|default:user.username }}</h2>
+        
+        <p>Tu estado: 
+            <strong style="color: {% if user.disponible %}#28a745{% else %}#dc3545{% endif %};">
+                {% if user.disponible %}✅ DISPONIBLE para pedidos{% else %}❌ NO DISPONIBLE (Actívalo en tu perfil){% endif %}
+            </strong>
+        </p>
+    </div>
+
+    ---
+
+    <h2>Pedidos Pendientes y Asignados</h2>
+
+    {% if pedidos %}
+        {% for pedido in pedidos %}
+            <div class="pedido-card" style="border: 1px solid #007bff; padding: 15px; border-radius: 8px; margin-bottom: 15px; background-color: {% if pedido.estado == 'en_camino' %}#fff3cd{% else %}#e8f4ff{% endif %};">
+                <div style="display: flex; justify-content: space-between; align-items: center;">
+                    <h3>📦 Pedido #{{ pedido.id }} - {{ pedido.comercio.nombre }}</h3>
+                    <strong style="color: blue;">Total: ${{ pedido.total_final|floatformat:2 }}</strong>
+                </div>
+
+                <p>Estado: 
+                    <strong style="color: {% if pedido.estado == 'en_camino' %}#ff9800{% else %}blue{% endif %};">
+                        {{ pedido.get_estado_display }}
+                    </strong>
+                </p>
+                
+                <p>📍 Dirección de Recogida (Comercio): **{{ pedido.comercio.direccion }}**</p>
+                <p>📍 Dirección de Entrega (Cliente): **{{ pedido.direccion_entrega }}**</p>
+                <p style="font-size: 0.9em; color: #555;">Solicitado en: {{ pedido.creado_en|date:"h:i A" }}</p>
+
+                {% if pedido.estado == 'listo' %}
+                    <form method="post" action="{% url 'recoger_pedido' pedido_id=pedido.id %}">
+                        {% csrf_token %}
+                        <button type="submit" style="background-color: #28a745; color: white; padding: 8px 15px; border: none; border-radius: 4px; cursor: pointer; margin-top: 10px;">
+                            ✅ Marcar como Recogido (En Camino)
+                        </button>
+                    </form>
+                
+                {% elif pedido.estado == 'en_camino' and pedido.repartidor == user %}
+                    <form method="post" action="{% url 'entregar_pedido' pedido_id=pedido.id %}">
+                        {% csrf_token %}
+                        <button type="submit" style="background-color: #007bff; color: white; padding: 8px 15px; border: none; border-radius: 4px; cursor: pointer; margin-top: 10px;">
+                            🎉 Marcar como Entregado
+                        </button>
+                    </form>
+                
+                {% endif %}
+            </div>
+        {% endfor %}
+    {% else %}
+        <p style="color: orange; font-size: 1.1em;">
+            Actualmente no hay pedidos listos para recoger ni asignados a ti.
+        </p>
+    {% endif %}
+
+    <p style="margin-top: 30px;"><a href="{% url 'home' %}">Volver al Inicio</a></p>
+{% endblock %}

@@ -1,0 +1,136 @@
+{% extends "base.html" %}
+
+{% block title %}Registro de Proveedor de Servicio{% endblock %}
+
+{% block content %}
+<div class="container py-5">
+    <div class="row justify-content-center">
+        <div class="col-lg-10">
+            <!-- Tarjeta Principal del Registro con estilo Yummy -->
+            <div class="card shadow-lg border-0" style="border-radius: 15px;">
+                <div class="card-header text-center py-4" style="background-color: var(--bs-warning); border-top-left-radius: 15px; border-top-right-radius: 15px;">
+                    <i class="bi bi-truck-flatbed text-white display-5 mb-2"></i>
+                    <h2 class="h3 text-white fw-bold mb-0">Únete a SuperService</h2>
+                    <p class="text-white mb-0 mt-2 opacity-75">Regístrate como Conductor (Viajes) o Repartidor (Domicilios)</p>
+                </div>
+                <div class="card-body p-4 p-md-5">
+                    <p class="text-center lead mb-4" style="color: var(--yummy-dark-green);">
+                        Completa la siguiente información. Tu cuenta requerirá **aprobación** del administrador.
+                    </p>
+                    
+                    <form method="post" enctype="multipart/form-data">
+                        {% csrf_token %}
+                        
+                        <!-- ---------------------------------------------------- -->
+                        <!-- Mensajes de Error Globales y de Campo -->
+                        <!-- ---------------------------------------------------- -->
+                        {% if form.non_field_errors %}
+                            <div class="alert alert-danger" role="alert">
+                                <strong>Error en el Formulario:</strong>
+                                {% for error in form.non_field_errors %}
+                                    {{ error }}
+                                {% endfor %}
+                            </div>
+                        {% endif %}
+
+                        <!-- ---------------------------------------------------- -->
+                        <!-- Sección 1: Datos Personales y de Cuenta -->
+                        <!-- ---------------------------------------------------- -->
+                        <h4 class="mb-4 pt-3 border-top"><i class="bi bi-person-fill me-2 text-primary"></i> 1. Datos de Cuenta y Personales</h4>
+                        
+                        <div class="row g-4 mb-4">
+                            <!-- Campos de Registro Básico (asumiendo que son los 6 primeros del form) -->
+                            {% for field in form|slice:":6" %}
+                                <div class="col-md-6">
+                                    <label for="{{ field.id_for_label }}" class="form-label fw-bold">{{ field.label }}</label>
+                                    {{ field }}
+                                    {% if field.errors %}
+                                        <div class="form-text text-danger">{{ field.errors }}</div>
+                                    {% endif %}
+                                </div>
+                            {% endfor %}
+                        </div>
+
+                        <!-- ---------------------------------------------------- -->
+                        <!-- Sección 2: Documentación y Vehículo -->
+                        <!-- ---------------------------------------------------- -->
+                        <h4 class="mb-4 pt-3 border-top"><i class="bi bi-car-fill me-2 text-warning"></i> 2. Documentación y Vehículo</h4>
+                        
+                        <div class="row g-4 mb-4">
+                            <!-- Campos restantes (Licencia, tipo de servicio, vehículo, etc.) -->
+                            {% for field in form|slice:"6:" %}
+                                <div class="col-md-6">
+                                    <label for="{{ field.id_for_label }}" class="form-label fw-bold">{{ field.label }}</label>
+                                    {{ field }}
+                                    {% if field.errors %}
+                                        <div class="form-text text-danger">{{ field.errors }}</div>
+                                    {% endif %}
+                                </div>
+                            {% endfor %}
+                        </div>
+
+                        <!-- ---------------------------------------------------- -->
+                        <!-- Sección 3: Términos y Condiciones -->
+                        <!-- ---------------------------------------------------- -->
+                        <h4 class="mb-4 pt-3 border-top"><i class="bi bi-file-earmark-check-fill me-2 text-success"></i> 3. Aceptación</h4>
+                        <div class="col-12 mb-4">
+                            <div class="form-check">
+                                <input class="form-check-input" type="checkbox" id="termsCheck" required>
+                                <label class="form-check-label" for="termsCheck">
+                                    Acepto los <a href="#" style="color: var(--yummy-green);">Términos y Condiciones</a> y confirmo que mi información es veraz.
+                                </label>
+                            </div>
+                        </div>
+
+                        <div class="col-12">
+                            <!-- Botón de Registro con estilo Warning/Yummy -->
+                            <button type="submit" class="btn btn-warning btn-lg w-100 fw-bold mt-4 text-white" style="background-color: var(--bs-warning); border-radius: 10px;">
+                                <i class="bi bi-send-fill me-2"></i> Enviar Solicitud de Registro
+                            </button>
+                        </div>
+                    </form>
+                    
+                    <hr class="my-4">
+                    
+                    <p class="text-center mb-0">
+                        ¿Ya tienes cuenta? 
+                        <a href="{% url 'login' %}" class="fw-bold" style="color: var(--yummy-green);">Inicia Sesión aquí</a>
+                    </p>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Estilos específicos para campos de formulario para que se vean bien (incluidos en login.html/registro_cliente.html) -->
+<style>
+    .card-body input[type="text"], 
+    .card-body input[type="password"],
+    .card-body input[type="email"],
+    .card-body input[type="file"],
+    .card-body select {
+        width: 100%;
+        padding: 10px 15px;
+        border: 1px solid #ccc;
+        border-radius: 8px;
+        transition: border-color 0.2s;
+    }
+    .card-body input[type="text"]:focus, 
+    .card-body input[type="password"]:focus,
+    .card-body input[type="email"]:focus,
+    .card-body input[type="file"]:focus,
+    .card-body select:focus {
+        border-color: var(--yummy-green);
+        outline: none;
+        box-shadow: 0 0 0 0.25rem rgba(55, 150, 84, 0.25);
+    }
+    .form-text.text-danger {
+        color: var(--bs-danger) !important;
+        font-size: 0.875em;
+    }
+    .form-control:focus {
+        border-color: var(--yummy-green) !important;
+        box-shadow: 0 0 0 0.25rem rgba(55, 150, 84, 0.25) !important;
+    }
+</style>
+{% endblock %}

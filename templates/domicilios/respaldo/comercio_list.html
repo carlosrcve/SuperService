@@ -1,0 +1,52 @@
+{% extends "base.html" %}
+
+{% block title %}Comercios Disponibles{% endblock %}
+
+{% block content %}
+    <h1>Explorar Comercios 🔎</h1>
+    <p>Selecciona un comercio para ver su menú y realizar un pedido.</p>
+
+    {% if messages %}
+        <ul class="messages">
+            {% for message in messages %}
+                <li style="color: red;">{{ message }}</li>
+            {% endfor %}
+        </ul>
+    {% endif %}
+
+    <div class="comercio-list" style="display: flex; flex-wrap: wrap; gap: 20px;">
+        
+        {% if comercios %}
+            {% for comercio in comercios %}
+                <div class="comercio-card" style="border: 1px solid #ccc; padding: 15px; border-radius: 8px; width: 300px; box-shadow: 2px 2px 5px rgba(0,0,0,0.1);">
+                    
+                    <h2 style="margin-top: 0; color: #007bff;">{{ comercio.nombre }}</h2>
+                    
+                    <p>
+                        <strong>Categoría:</strong> 
+                        {% if comercio.tipo == 'restaurante' %}
+                            🍽️ Restaurante
+                        {% elif comercio.tipo == 'supermercado' %}
+                            🛒 Supermercado
+                        {% elif comercio.tipo == 'farmacia' %}
+                            💊 Farmacia
+                        {% else %}
+                            {{ comercio.get_tipo_display }}
+                        {% endif %}
+                    </p>
+                    
+                    <p>📍 {{ comercio.direccion }}</p>
+
+                    <a href="{% url 'producto_list' comercio_id=comercio.id %}" 
+                       style="display: inline-block; background-color: #28a745; color: white; padding: 10px 15px; text-decoration: none; border-radius: 5px; margin-top: 10px;">
+                        Ver Menú y Productos
+                    </a>
+                </div>
+            {% endfor %}
+        {% else %}
+            <p style="color: orange;">Actualmente no hay comercios activos disponibles para hacer pedidos.</p>
+        {% endif %}
+    </div>
+
+    <p style="margin-top: 30px;"><a href="{% url 'home' %}">Volver al Inicio</a></p>
+{% endblock %}

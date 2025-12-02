@@ -1,0 +1,170 @@
+{% extends "base.html" %}
+{% load static %}
+{% load crispy_forms_tags %}
+
+{% block title %}Chat con {{ usuario_objetivo.username }}{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <h2 class="mb-3">Conversación con <span class="text-primary">{{ usuario_objetivo.username }}</span></h2>
+    <p class="lead">Sala: <strong>{{ room_name_js }}</strong></p>
+
+    <hr style="margin-top: 40px; margin-bottom: 40px;">
+
+    <div class="chat-container" style="max-width: 600px; margin: 0 auto; border: 1px solid #ddd; padding: 20px; border-radius: 8px; background-color: #f9f9f9;">
+        <h3 style="color: #007bff; border-bottom: 2px solid #007bff; padding-bottom: 10px; margin-top: 0;">
+            Chat Directo
+        </h3>
+
+        <div class="message-history" id="chat-window" style="height: 350px; overflow-y: scroll; padding: 10px; background-color: white; border: 1px solid #ccc; border-radius: 5px; margin-bottom: 15px;">
+            <div id="chat-log-django">
+                {% for mensaje in historial %}
+                    <div class="message-bubble" style="margin-bottom: 10px; padding: 8px 12px; border-radius: 15px; 
+                        {% if mensaje.autor == user %}
+                            background-color: #dcf8c6; float: right; clear: both;
+                        {% else %}
+                            background-color: #f1f0f0; float: left; clear: both;
+                        {% endif %}
+                        max-width: 85%;">
+                        
+                        <small style="font-size: 0.75em; color: #888;">
+                            {% if mensaje.autor == user %}Tú{% else %}{{ mensaje.autor.username }}{% endif %}
+                            - {{ mensaje.timestamp|date:"h:i A" }}
+                        </small>
+                        <p style="margin: 3px 0 0 0;">{{ mensaje.contenido }}</p>
+                    </div>
+                {% empty %}
+                    <p style="text-align: center; color: #999; margin-top: 50px;">¡Comiencen su conversación!</p>
+                {% endfor %}
+            </div>
+            <div id="chat-log-websocket" style="clear: both;"></div> 
+        </div>
+
+        <div class="input-group">
+            <input id="chat-message-input" type="text" class="form-control" placeholder="Escribe un mensaje..." autocomplete="off" style="width: 100%; padding: 10px; border: 1px solid #ccc; border-radius: 5px;">
+            <button id="chat-message-submit" type="button" style="display: block; width: 100%; padding: 10px; background-color: #007bff; color: white; border: none; border-radius: 5px; margin-top: 10px; cursor: pointer;">
+                Enviar Mensaje
+            </button>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    const roomName = "{{ room_name_js }}"; 
+    const chatWindow = document.querySelector('#chat-window'); 
+    const chatLogWebsocket = document.querySelector('#chat-log-websocket'); 
+    const messageInput = document.querySelector('#chat-message-input');
+    const submitButton = document.querySelector('#chat-message-submit');
+
+    function scrollToBottom() {
+        if (chatWindow) {
+            // Utilizamos scrollHeight para obtener el tamaño total del contenido
+            chatWindow.scrollTop = chatWindow.scrollHeight;
+        }
+    }
+    
+    // Inicializar el WebSocket (usando el puerto 8081 corregido)
+    const chatSocket = new WebSocket(
+        'ws://' + window.location.hostname + ':8081' + '/ws/chat/' + roomName + '/'
+    );
+
+    // ----------------------------------------------------
+    // Eventos del WebSocket
+    // ----------------------------------------------------
+
+    chatSocket.onopen = function(e) {
+        console.log("✅ Conexión WebSocket para ChatRoom abierta.");
+        scrollToBottom(); // Desplazamiento al abrir la conexión (carga inicial)
+    };
+
+    chatSocket.onclose = function(e) {
+        console.error("❌ Conexión WebSocket para ChatRoom cerrada inesperadamente.");
+    };
+
+    chatSocket.onmessage = function(e) {
+        const data = JSON.parse(e.data);
+        const message = data.message;
+        const username = data.username;
+        const isMe = data.is_me;
+        // 🚀 MEJORA DE HORA: Capturamos el timestamp del servidor
+        const timestamp = data.timestamp; 
+
+        // Crear la burbuja del mensaje dinámicamente
+        const newBubble = document.createElement('div');
+        newBubble.className = 'message-bubble';
+        newBubble.style.marginBottom = '10px';
+        newBubble.style.padding = '8px 12px';
+        newBubble.style.borderRadius = '15px';
+        newBubble.style.maxWidth = '85%';
+        
+        if (isMe) {
+            newBubble.style.backgroundColor = '#dcf8c6'; 
+            newBubble.style.float = 'right';
+            newBubble.style.clear = 'both';
+        } 
+        else {
+            newBubble.style.backgroundColor = '#f1f0f0'; 
+            newBubble.style.float = 'left';
+            newBubble.style.clear = 'both';
+        }
+
+        const smallTag = document.createElement('small');
+        smallTag.style.fontSize = '0.75em';
+        smallTag.style.color = '#888';
+        // 🚀 MEJORA DE HORA: Usamos el timestamp del servidor (si existe)
+        const displayTime = timestamp || new Date().toLocaleTimeString('es-ES', {hour: '2-digit', minute:'2-digit'});
+        smallTag.textContent = (isMe ? 'Tú' : username) + ' - ' + displayTime;
+        
+        const pTag = document.createElement('p');
+        pTag.style.margin = '3px 0 0 0';
+        pTag.textContent = message;
+
+        newBubble.appendChild(smallTag);
+        newBubble.appendChild(pTag);
+
+        chatLogWebsocket.appendChild(newBubble); 
+        
+        // Desplazamiento al recibir un nuevo mensaje
+        scrollToBottom(); 
+    };
+
+    // ----------------------------------------------------
+    // Lógica del Botón y Envío de Mensajes (CON DESPLAZAMIENTO IMPECABLE)
+    // ----------------------------------------------------
+
+    function sendMessage() {
+        const message = messageInput.value.trim();
+        if (message === "") {
+            return;
+        }
+        
+        if (chatSocket.readyState === WebSocket.OPEN) {
+            chatSocket.send(JSON.stringify({
+                'message': message
+            }));
+            
+            messageInput.value = '';
+            
+            // 🚀 MEJORA DE DESPLAZAMIENTO: Mueve el scroll antes de que el mensaje vuelva
+            scrollToBottom(); 
+            
+        } else {
+            console.error("❌ ERROR: WebSocket no está abierto. Estado actual: " + chatSocket.readyState);
+            alert("El chat no está conectado. Por favor, recargue la página.");
+        }
+    }
+
+    submitButton.onclick = sendMessage;
+
+    messageInput.onkeyup = function(e) {
+        if (e.key === 'Enter') { 
+            sendMessage();
+        }
+    };
+    
+    // Desplazamiento al cargar el DOM (historial de Django)
+    document.addEventListener('DOMContentLoaded', scrollToBottom);
+</script>
+{% endblock %}
