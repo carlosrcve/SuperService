@@ -9,11 +9,18 @@ from django.db.models import Q # Importación necesaria para buscar salas de cha
 
 from .forms import LoginForm, ClienteRegistroForm, ConductorRegistroForm
 from .models import PerfilConductor, UsuarioPersonalizado, ChatRoom, Mensaje # Importamos los modelos de chat
-from rest_framework import viewsets
+from rest_framework import viewsets, status
 
 from .serializers import ClienteSerializer, ConductorRegistroSerializer, UsuarioDetalleSerializer
 from .models import UsuarioPersonalizado
 from .permissions import IsOwnerOrAdmin # Requerido
+
+
+from rest_framework.decorators import action # Asegúrate de que action esté importado
+from rest_framework.response import Response
+# Importa IsAuthenticated (o usa tu propia clase si ya tienes una)
+from rest_framework.permissions import IsAuthenticated
+from django.views.decorators.csrf import csrf_exempt
 
 
 
@@ -21,6 +28,54 @@ from .permissions import IsOwnerOrAdmin # Requerido
 # 1. Vistas de Autenticación
 # ----------------------------------------------------------------------
 
+@csrf_exempt # <--- AGREGA ESTO (importalo de django.views.decorators.csrf)
+@require_http_methods(["GET", "POST"])
+def login_view(request):
+    """Maneja el inicio de sesión para Web y App."""
+    
+    # --- BLOQUE PARA LA APP (REACT NATIVE) ---
+    if request.method == 'POST' and request.content_type == 'application/json':
+        import json
+        from django.http import JsonResponse
+        try:
+            data = json.loads(request.body)
+            username = data.get('username')
+            password = data.get('password')
+            user = authenticate(username=username, password=password)
+            if user:
+                login(request, user)
+                return JsonResponse({
+                    'status': 'success',
+                    'user': {'username': user.username, 'rol': user.rol}
+                })
+            return JsonResponse({'status': 'error', 'message': 'Credenciales inválidas'}, status=401)
+        except:
+            return JsonResponse({'status': 'error', 'message': 'Error de formato'}, status=400)
+
+    # --- BLOQUE ORIGINAL PARA WEB (No se toca) ---
+    if request.user.is_authenticated:
+        return redirect('home') 
+
+    if request.method == 'POST':
+        form = LoginForm(request, data=request.POST)
+        if form.is_valid():
+            username = form.cleaned_data.get('username')
+            password = form.cleaned_data.get('password')
+            user = authenticate(username=username, password=password)
+            if user is not None:
+                login(request, user)
+                messages.success(request, f"Bienvenido, {user.username}.")
+                return redirect('home')
+    else:
+        form = LoginForm()
+    return render(request, 'usuarios/login.html', {'form': form})
+
+
+
+
+
+
+'''
 @require_http_methods(["GET", "POST"])
 def login_view(request):
     """Maneja el inicio de sesión de todos los tipos de usuarios."""
@@ -48,7 +103,7 @@ def login_view(request):
         form = LoginForm()
         
     return render(request, 'usuarios/login.html', {'form': form})
-
+'''
 @login_required
 def logout_view(request):
     """Cierra la sesión del usuario actual."""
@@ -287,28 +342,90 @@ class IsOwnerOrAdmin(permissions.BasePermission):
 class UsuarioViewSet(viewsets.ModelViewSet):
     """
     Viewset que gestiona todas las operaciones del modelo UsuarioPersonalizado.
-    Utiliza un serializador dinámico según la acción.
     """
+    # ... (código existente: queryset, permission_classes, get_serializer_class)
     queryset = UsuarioPersonalizado.objects.all().exclude(rol='administrador')
-    permission_classes = [IsOwnerOrAdmin] # Ya no hay error de NameError
-    
-    # Selecciona el serializador basado en la acción
+    permission_classes = [IsOwnerOrAdmin] # O la clase de permisos que uses
+
     def get_serializer_class(self):
+        # ... (código existente para get_serializer_class)
         if self.action == 'create':
-            # POST sin acción custom (Registro de Cliente Simple)
-            return ClienteSerializer 
+             return ClienteSerializer 
         
         if self.action == 'registrar_conductor':
-            # POST a /usuarios/registrar_conductor/ (Registro Anidado)
-            return ConductorRegistroSerializer
-            
-        # GET, PUT, PATCH, DELETE: Usar el serializador seguro y completo
+             return ConductorRegistroSerializer
+             
+        # NUEVO: Para la acción de obtener perfil
+        if self.action == 'obtener_perfil':
+             return UsuarioDetalleSerializer # Usamos el serializador completo
+             
         return UsuarioDetalleSerializer
-        
-    # Acción custom para el registro anidado
+    
+    # ... (código existente para registrar_conductor)
     @action(detail=False, methods=['post'])
     def registrar_conductor(self, request):
-        serializer = self.get_serializer(data=request.data)
-        serializer.is_valid(raise_exception=True)
-        self.perform_create(serializer)
-        return Response(serializer.data, status=status.HTTP_201_CREATED)
+         # ... (código existente)
+         serializer = self.get_serializer(data=request.data)
+         serializer.is_valid(raise_exception=True)
+         self.perform_create(serializer)
+         return Response(serializer.data, status=status.HTTP_201_CREATED)
+
+
+    # 🚀 NUEVA ACCIÓN PERSONALIZADA: obtener_perfil
+    @action(detail=False, methods=['get'], permission_classes=[IsAuthenticated]) 
+    def obtener_perfil(self, request):
+        """
+        Devuelve la información del usuario que está autenticado (request.user).
+        URL generada automáticamente: /usuarios/obtener_perfil/
+        """
+        # 1. El usuario está disponible gracias al sistema de autenticación (ej: Token)
+        user = request.user 
+        
+        # 2. El DRF necesita serializar ese objeto Usuario para convertirlo a JSON
+        # Usamos el serializador definido en get_serializer_class
+        serializer = self.get_serializer(user)
+        
+        # 3. Devolvemos los datos con el código 200 OK
+        return Response(serializer.data)
+
+
+
+@csrf_exempt
+def api_enviar_mensaje(request):
+    """Endpoint para que la App envíe mensajes al servidor."""
+    if request.method == 'POST':
+        try:
+            import json
+            from django.http import JsonResponse
+            data = json.loads(request.body)
+            
+            # 1. Identificar quién envía (Norbe)
+            remitente = get_object_or_404(UsuarioPersonalizado, username=data.get('usuario'))
+            
+            # 2. Identificar el canal (Si es Admin, buscamos a un staff)
+            if data.get('canal') == 'Admin':
+                destinatario = UsuarioPersonalizado.objects.filter(is_staff=True).first()
+            else:
+                destinatario = UsuarioPersonalizado.objects.filter(rol='conductor').first()
+
+            if not destinatario:
+                return JsonResponse({'error': 'No hay destinatario disponible'}, status=404)
+
+            # 3. Localizar o crear la sala usando tu lógica de IDs ordenados
+            ids = sorted([remitente.pk, destinatario.pk])
+            room_name = f"chat_{ids[0]}_{ids[1]}"
+            room, created = ChatRoom.objects.get_or_create(room_name=room_name)
+            
+            if created:
+                room.participantes.add(remitente, destinatario)
+
+            # 4. Crear el mensaje
+            Mensaje.objects.create(
+                room=room,
+                autor=remitente,
+                contenido=data.get('texto')
+            )
+
+            return JsonResponse({'status': 'success', 'room': room_name})
+        except Exception as e:
+            return JsonResponse({'status': 'error', 'message': str(e)}, status=400)

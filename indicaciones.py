@@ -85,4 +85,125 @@ Código: C18ERROR20251111NPE
 
 
 https://gemini.google.com/app/9b5ad409b062a73f
+https://dashboard.render.com/new/database
+Username: carlosrcve
+Email address: carlosrcve@gmail.com
+Password:ca22021956*
+
+
+https://gemini.google.com/app/9b5ad409b062a73f
+
+
+https://gemini.google.com/app/dc7b31c227aaffc0
+
+https://gemini.google.com/app/1c47614e513140fa?hl=es
+
+cd desktop
+cd SuperService
+
+
+PS C:\Users\Carlos Rodriguez> cd desktop
+PS C:\Users\Carlos Rodriguez\desktop> cd SuperService
+PS C:\Users\Carlos Rodriguez\desktop\SuperService> docker run -d -p 8080:80 nginx
+
+
+
+
+
+
+
+
+Aquí está el comando que necesitarás. Guárdalo para cuando veas el mensaje de éxito:
+
+
+# Detiene y elimina cualquier contenedor anterior con el mismo nombre
+docker stop superservice-backend-container 2> /dev/null || true
+docker rm superservice-backend-container 2> /dev/null || true
+
+# Ejecuta el nuevo contenedor en segundo plano (-d) y mapea el puerto 8000
+# El servidor Django estará accesible en tu máquina en: http://localhost:8000
+docker run -d \
+    --name superservice-backend-container \
+    -p 8000:8000 \
+    superservice-backend
+
+
+Terminal 2: Una vez que la Terminal 1 muestre el mensaje de Successfully built..., ve a la Terminal 2 (que está libre y lista) y pega el comando:
+
+docker stop superservice-backend-container 2> /dev/null || true
+docker rm superservice-backend-container 2> /dev/null || true
+docker run -d --name superservice-backend-container -p 8000:8000 superservice-backend
+
+
+
+
+
+docker build -t superservice-backend .
+docker rm -f superservice-app
+docker run -d -p 8000:8000 --name superservice-app superservice-backend
+docker ps
+
+
+
+
+
+https://gemini.google.com/app/2759c4ee5f6ace25
+
+
+
+https://web.whatsapp.com/
+
+
+
+
+https://gemini.google.com/app/d68d958dd4cc8255
+
+
+
+
+# 1. Reconstruye la imagen, forzando la reevaluación del ENTRYPOINT (debería ser rápido)
+docker build -t superservice-backend .
+
+# 2. Detiene y ELIMINA el contenedor viejo, luego ejecuta uno NUEVO
+docker rm -f superservice-app
+docker run -d -p 8000:8000 --name superservice-app superservice-backend
+
+# 3. Verifica si el nuevo contenedor está 'Up'
+docker ps
+
+Si aún no ves `superservice-app` en la lista de `docker ps`, entonces significa que el `ENTRYPOINT` sí está ejecutando, pero **el error es nuevo** y no se refleja en los logs anteriores.
+
+**Paso 3: Obtener los Nuevos Logs**
+
+Si el contenedor no está `Up`, ejecuta los logs **inmediatamente** después de la falla. Estos deben mostrar una nueva marca de tiempo y un nuevo error:
+
+```powershell
+docker logs superservice-app
+
+Envíame la salida del último comando `docker logs superservice-app`. ¡Esto nos mostrará el error real de Django que hemos estado ocultando!
+
+
+
+
+
+// En tu código React Native (Expo Go)
+const API_BASE_URL = 'http://10.0.2.2:8000'; 
+// Si usas un teléfono físico, cámbialo a tu IP local, p.ej. 'http://192.168.1.10:8000'
+
+exp://192.168.1.100:19000
+
+
+
+cd "C:\Users\Carlos Rodriguez\Desktop\SuperService"
+lt --port 8080 --subdomain flat-rooms-lead
+
+
+
+
+
+
+python manage.py runserver 0.0.0.0:8080
+
+
+
 

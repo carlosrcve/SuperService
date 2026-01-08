@@ -22,7 +22,6 @@ astunparse==1.6.3
 async-lru==2.0.5
 atpublic==6.0.1
 attrs==25.3.0
-audioop-lts==0.2.1
 autobahn==24.4.2
 Automat==25.4.16
 babel==2.17.0
@@ -45,8 +44,6 @@ channels==4.2.2
 channels_redis==4.2.1
 chardet==3.0.4
 charset-normalizer==3.4.2
-ChatterBot==1.0.4
-chatterbot-corpus==1.2.2
 click==8.1.8
 click-didyoumean==0.3.1
 click-plugins==1.1.1
@@ -55,7 +52,6 @@ cloudinary==1.44.1
 cloudpathlib==0.21.1
 colorama==0.4.6
 comm==0.2.2
-comtypes==1.4.10
 confection==0.1.5
 config==0.5.1
 confusable-homoglyphs==3.3.1
@@ -143,11 +139,9 @@ djangorestframework==3.16.0
 djangorestframework_simplejwt==5.5.1
 docx2txt==0.9
 dotenv==0.9.9
-drf-extensions @ git+https://github.com/chibisov/drf-extensions.git@6f8db9763bf6ff100287d9c920159938ce534f9d
 drf-yasg==1.21.10
 elastic-transport==9.1.0
 elasticsearch==9.1.0
-en_core_web_lg @ https://github.com/explosion/spacy-models/releases/download/en_core_web_lg-3.8.0/en_core_web_lg-3.8.0-py3-none-any.whl#sha256=293e9547a655b25499198ab15a525b05b9407a75f10255e405e8c3854329ab63
 en_core_web_sm @ https://github.com/explosion/spacy-models/releases/download/en_core_web_sm-3.8.0/en_core_web_sm-3.8.0-py3-none-any.whl#sha256=1932429db727d4bff3deed6b34cfc05df17794f4a52eeb26cf8928f7c1a0fb85
 et_xmlfile==2.0.0
 executing==2.2.0
@@ -163,7 +157,6 @@ Flask-SocketIO==5.2.0
 Flask-SQLAlchemy==3.1.1
 flask-swagger-ui==4.11.1
 flatbuffers==25.2.10
-flet==0.27.6
 flexcache==0.3
 flexparser==0.4
 fonttools==4.56.0
@@ -188,7 +181,6 @@ Google-Colab-Transfer==0.1.6
 google-generativeai==0.8.5
 google-pasta==0.2.0
 googleapis-common-protos==1.69.2
-googletrans==3.1.0a0
 gpg-lite==0.10.2
 graphene==3.4.3
 graphene-django==3.2.3
@@ -199,7 +191,7 @@ greenlet==3.1.1
 grpcio==1.74.0
 grpcio-status==1.71.2
 gTTS==2.5.4
-gunicorn==23.0.0
+gunicorn==20.1.0
 h11==0.14.0
 h2==3.2.0
 h5py==3.14.0
@@ -219,7 +211,7 @@ imageio-ffmpeg==0.6.0
 incremental==24.7.2
 inflection==0.5.1
 ipykernel==6.29.5
-ipython==9.0.2
+ipython==8.37.0
 ipython_pygments_lexers==1.1.1
 isoduration==20.11.0
 itsdangerous==2.2.0
@@ -245,10 +237,9 @@ jupyterlab==4.3.6
 jupyterlab_pygments==0.3.0
 jupyterlab_server==2.27.3
 jwcrypto==1.5.6
-keras==3.11.2
-Keras-Applications==1.0.8
-Keras-Preprocessing==1.1.2
-keyboard==0.13.5
+keras
+Keras-Applications
+Keras-Preprocessing==1.1.2 # Desbloqueado previamente, pero por si acaso, lo dejo aquí
 kiwisolver==1.4.8
 kombu==5.5.4
 langchain==0.3.27
@@ -307,7 +298,6 @@ nltk==3.9.1
 notebook==7.3.3
 notebook_shim==0.2.4
 numexpr==2.11.0
-numpy==2.1.2
 oauthlib==3.2.2
 odfpy==1.4.1
 ollama==0.6.0
@@ -333,10 +323,8 @@ pdfminer.six==20250506
 peewee==3.18.2
 pefile==2023.2.7
 pilkit==3.0
-pillow==11.2.1
 Pint==0.24.4
 platformdirs==4.3.7
-playsound==1.3.0
 plotly==6.1.2
 preshed==3.0.10
 proglog==0.1.11
@@ -345,7 +333,6 @@ promise==2.3
 prompt_toolkit==3.0.50
 propcache==0.3.1
 proto-plus==1.26.1
-protobuf==3.20.3
 psutil==7.0.0
 psycopg2==2.9.10
 psycopg2-binary==2.9.10
@@ -353,7 +340,6 @@ pure_eval==0.2.3
 pyarrow==19.0.1
 pyasn1==0.6.1
 pyasn1_modules==0.4.2
-PyAudio==0.2.14
 pycparser==2.22
 pycryptodome==3.23.0
 pycurl==7.45.6
@@ -378,17 +364,14 @@ pyotp==2.9.0
 pyparsing==3.2.3
 pypdf==6.0.0
 pyphen==0.17.2
-pypiwin32==223
 pyresparser==1.0.6
 pyrsistent==0.20.0
-PySide6==6.9.0
-PySide6_Addons==6.9.0
-PySide6_Essentials==6.9.0
+PyAudio==0.2.14
 pyTelegramBotAPI==4.26.0
 python-bidi==0.6.6
 python-calamine==0.4.0
 python-crontab==3.2.0
-python-dateutil==2.9.0.post0
+python-dateutil==2.8.2
 python-decouple==3.8
 python-docx==1.2.0
 python-dotenv==1.1.0
@@ -401,13 +384,8 @@ python-social-auth==0.3.6
 python-socketio==5.13.0
 python3-openid==3.2.0
 pyttsx3==2.98
-pytube==15.0.0
 pytube3==9.6.4
-pytubefix==8.13.1
 pytz==2025.2
-pywin32==310
-pywin32-ctypes==0.2.3
-pywinpty==2.0.15
 pyxlsb==1.0.10
 PyYAML==6.0.2
 pyzmq==26.3.0
@@ -441,7 +419,6 @@ service-identity==24.2.0
 sett==3.1.0
 setuptools==80.9.0
 shellingham==1.5.4
-shiboken6==6.9.0
 shortuuid==1.0.13
 simple-websocket==1.1.0
 six==1.17.0
@@ -479,10 +456,8 @@ tavily-python==0.7.12
 telebot==0.0.5
 tenacity==9.0.0
 tendo==0.3.0
-tensorboard==2.20.0
-tensorboard-data-server==0.7.2
-tensorflow @ https://storage.googleapis.com/tensorflow/mac/cpu/tensorflow-1.12.0-py3-none-any.whl#sha256=f587dc03b5f0d1e50cca39b7159c9f21ffdec96273dbf5f7619d48c622cb21f2
-tensorflow_cpu==2.20.0
+tensorboard
+tensorflow
 termcolor==3.1.0
 terminado==0.18.1
 text-unidecode==1.3
@@ -494,9 +469,9 @@ tinycss2==1.4.0
 tinyhtml5==2.0.0
 tokenizers==0.21.1
 toml==0.10.2
-torch==2.6.0+cpu
-torchaudio==2.6.0+cpu
-torchvision==0.21.0+cpu
+torch==2.6.0
+torchaudio==2.6.0
+torchvision==0.21.0
 tornado==6.4.2
 tqdm==4.67.1
 traitlets==5.14.3
@@ -505,7 +480,6 @@ translate==3.6.1
 Twisted==24.11.0
 txaio==23.1.1
 typer==0.15.2
-types-python-dateutil==2.9.0.20241206
 typing-inspect==0.9.0
 typing-inspection==0.4.0
 typing_extensions==4.13.0
@@ -519,29 +493,3 @@ uritemplate==4.1.1
 uritools==5.0.0
 urllib3==2.3.0
 user-agents==2.2.0
-vine==5.1.0
-virtualenv==20.30.0
-wasabi==1.1.3
-watchdog==6.0.0
-wcwidth==0.2.13
-weasel==0.4.1
-weasyprint==62.3
-webcolors==24.11.1
-webencodings==0.5.1
-websocket-client==1.8.0
-websockets==15.0.1
-Werkzeug==3.1.3
-wheel==0.45.1
-whitenoise==6.9.0
-wrapt==1.17.2
-wsproto==1.2.0
-xhtml2pdf==0.2.17
-xlrd==1.2.0
-XlsxWriter==3.2.3
-xlwt==1.3.0
-xxhash==3.5.0
-yarl==1.18.3
-yfinance==0.2.65
-zope.interface==7.2
-zopfli==0.2.3.post1
-zstandard==0.23.0

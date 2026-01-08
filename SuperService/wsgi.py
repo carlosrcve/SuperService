@@ -1,3 +1,5 @@
+#SuperService/wsgi.py
+
 """
 WSGI config for SuperService project.
 
@@ -14,3 +16,6 @@ from django.core.wsgi import get_wsgi_application
 os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'SuperService.settings')
 
 application = get_wsgi_application()
+
+
+

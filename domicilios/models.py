@@ -174,3 +174,13 @@ class Mensaje(models.Model):
     def __str__(self):
         # Muestra un extracto del mensaje para fácil identificación
         return f"Mensaje de {self.emisor.username} en Pedido #{self.pedido.id}: {self.contenido[:30]}..."
+
+
+
+class Categoria(models.Model):  # <--- ESTO ES LO QUE FALTA
+    nombre = models.CharField(max_length=100)
+    descripcion = models.TextField(blank=True)
+    imagen = models.ImageField(upload_to='categorias/', null=True, blank=True)
+
+    def __str__(self):
+        return self.nombre

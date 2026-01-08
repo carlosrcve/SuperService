@@ -99,8 +99,7 @@ class UsuarioDetalleSerializer(serializers.ModelSerializer):
         model = UsuarioPersonalizado
         fields = [
             'id', 'username', 'email', 'first_name', 'last_name', 
-            'rol', 'telefono', 'disponible', 'perfil_conductor', 
-            'latitud', 'longitud'
+            'rol', 'telefono', 'disponible', 'perfil_conductor'
         ]
         # Hacemos todos los campos de solo lectura por defecto
         read_only_fields = fields 
@@ -110,8 +109,8 @@ class UsuarioDetalleSerializer(serializers.ModelSerializer):
         # Permite actualizar solo campos específicos
         instance.telefono = validated_data.get('telefono', instance.telefono)
         instance.disponible = validated_data.get('disponible', instance.disponible)
-        instance.latitud = validated_data.get('latitud', instance.latitud)
-        instance.longitud = validated_data.get('longitud', instance.longitud)
+        #instance.latitud = validated_data.get('latitud', instance.latitud)
+        #instance.longitud = validated_data.get('longitud', instance.longitud)
         
         instance.save()
         return instance

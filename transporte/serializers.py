@@ -7,43 +7,37 @@ from .models import (
     MensajeViaje
 )
 
-# --- 1. Serializador de Vehículo ---
+# --- 1. Serializador de Vehículo (FALTABA ESTE) ---
 class VehiculoSerializer(serializers.ModelSerializer):
-    # conductor será un campo de solo lectura
-    conductor = serializers.ReadOnlyField(source='conductor.username') 
-
     class Meta:
         model = Vehiculo
-        fields = ['id', 'conductor', 'tipo', 'modelo', 'placa', 'aprobado']
-        # La app móvil podría querer registrar el vehículo, pero no aprobarlo
-        read_only_fields = ['aprobado'] 
+        fields = '__all__'
 
-# --- 2. Serializador de Viaje (CRÍTICO) ---
+# --- 2. Serializador de Viaje (CORREGIDO PARA COORDINADAS Y APP) ---
 class ViajeSerializer(serializers.ModelSerializer):
-    # Mostrar el nombre de usuario del cliente/conductor
     cliente_username = serializers.ReadOnlyField(source='cliente.username')
-    conductor_username = serializers.ReadOnlyField(source='conductor.username')
     
+    # Mapeo: 'origen' es lo que manda la App, 'nombre_origen' es lo que está en tu models.py
+    origen = serializers.CharField(source='nombre_origen')
+    destino = serializers.CharField(source='nombre_destino')
+    monto = serializers.DecimalField(source='tarifa_estimada', max_digits=10, decimal_places=2)
+
     class Meta:
         model = Viaje
         fields = [
-            'id', 'cliente', 'cliente_username', 'conductor', 'conductor_username', 
-            'vehiculo_usado', 'tipo_servicio', 'notas_conductor', 'nombre_origen', 
-            'nombre_destino', 'origen_lat', 'origen_lon', 'destino_lat', 
-            'destino_lon', 'estado', 'tarifa_estimada', 'creado_en'
+            'id', 'cliente', 'cliente_username', 'origen', 'destino', 
+            'monto', 'estado', 'origen_lat', 'origen_lon', 
+            'destino_lat', 'destino_lon'
         ]
-        # Campos que el cliente no puede modificar al crear la solicitud:
-        read_only_fields = ['conductor', 'vehiculo_usado', 'estado', 'tarifa_estimada']
 
 # --- 3. Serializador de Mensajes ---
 class MensajeViajeSerializer(serializers.ModelSerializer):
-    # Mostrar el nombre del emisor
     emisor_username = serializers.ReadOnlyField(source='emisor.username')
 
     class Meta:
         model = MensajeViaje
         fields = ['id', 'viaje', 'emisor', 'emisor_username', 'contenido', 'timestamp']
-        read_only_fields = ['emisor', 'timestamp'] # El emisor se asigna automáticamente
+        read_only_fields = ['emisor', 'timestamp']
 
 # --- 4. Serializador de Asistencia Vial ---
 class SolicitudAsistenciaSerializer(serializers.ModelSerializer):

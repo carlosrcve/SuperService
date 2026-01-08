@@ -1,0 +1,10 @@
+Django
+gunicorn
+spacy
+python-decouple
+django-cors-headers
+Django==4.2.14
+gunicorn==21.2.0
+djangorestframework
+spacy==3.8.0
+django-crispy-forms

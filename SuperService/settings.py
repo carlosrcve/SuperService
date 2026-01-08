@@ -5,24 +5,29 @@ Configuración para el proyecto SuperService.
 
 import os
 from pathlib import Path
+from decouple import config # 🔑 AÑADIDO: Importar para cargar variables de entorno
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
 
 
 # ----------------------------------------------------------------------
-# SEGURIDAD Y CLAVE SECRETA
+# SEGURIDAD Y CLAVE SECRETA (CARGADAS DESDE .env)
 # ----------------------------------------------------------------------
 
-# WARNING: keep the secret key used in production secret!
-SECRET_KEY = 'tu-super-secreta-clave-aqui-usa-variables-de-entorno-en-produccion'
+# 🔑 CORRECCIÓN: Cargar SECRET_KEY y DEBUG desde el entorno (más seguro).
+SECRET_KEY = config('SECRET_KEY')
 
-# WARNING: don't run with debug turned on in production!
-DEBUG = True
+# Si DEBUG no está definido en el entorno, por defecto es False en producción.
+DEBUG = config('DEBUG', default=False, cast=bool) 
 
-ALLOWED_HOSTS = []
+# Cuando DEBUG=False, esta lista DEBE contener el dominio de tu servidor.
+#ALLOWED_HOSTS = ['127.0.0.1', 'localhost', '0.0.0.0', 'superservice-api.onrender.com'] # Reemplazar con la URL real
+#ALLOWED_HOSTS = ['localhost', '127.0.0.1', 'host.docker.internal']
+#ALLOWED_HOSTS = ['192.168.1.10', 'host.docker.internal', 'localhost', '127.0.0.1', '*' ]
+ALLOWED_HOSTS = ['norbe-final.loca.lt', 'localhost', '127.0.0.1', '.loca.lt']
 
-
+ALLOWED_HOSTS = ['*']
 # ----------------------------------------------------------------------
 # APLICACIONES (APPS)
 # ----------------------------------------------------------------------
@@ -35,39 +40,45 @@ INSTALLED_APPS = [
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
+    'django.contrib.humanize', # Ya estaba
 
-    'crispy_forms',  # Formulario
-    'crispy_bootstrap5',  # Estilos para Crispy Forms
-    
-    # Librerías de terceros 
+    # Librerías de terceros y seguridad
+    'corsheaders',              # 🔑 CORRECCIÓN: Colocado aquí para mejor organización
+    'rest_framework',           # DRF
+    'crispy_forms',             # Formulario
+    'crispy_bootstrap5',        # Estilos para Crispy Forms
     'mathfilters',
     
-    # Aplicación de Channels (¡CRÍTICA PARA EL CHAT!)
+    # Aplicación de Channels
     'channels',
 
-    # 🛑 Añade esta línea
-    'django.contrib.humanize',
-
     # Aplicaciones del Proyecto SuperService
-    'usuarios',    # Manejo de usuarios personalizados y roles
+    'usuarios',
     'transporte',
     'domicilios',
-    'rest_framework',
-    'corsheaders',
 ]
 
+# ----------------------------------------------------------------------
+# MIDDLEWARE (ORDEN CRÍTICO PARA WHITENOISE Y CORS)
+# ----------------------------------------------------------------------
+
 MIDDLEWARE = [
+    # 1. Seguridad (Debe ir primero)
     'django.middleware.security.SecurityMiddleware',
-    'csp.middleware.CSPMiddleware',
+    # 2. WhiteNoise (Debe ir justo después de SecurityMiddleware para estáticos)
+    'whitenoise.middleware.WhiteNoiseMiddleware', 
+    'csp.middleware.CSPMiddleware', # CSP
+
+    # 3. CORS (Debe ir antes de Common y CSRF)
+    'corsheaders.middleware.CorsMiddleware',
+
+    # 4. Django Default
     'django.contrib.sessions.middleware.SessionMiddleware',
     'django.middleware.common.CommonMiddleware',
     'django.middleware.csrf.CsrfViewMiddleware',
     'django.contrib.auth.middleware.AuthenticationMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
-    'corsheaders.middleware.CorsMiddleware',
-    'whitenoise.middleware.WhiteNoiseMiddleware', # 👈 ¡Añadir aquí!
-   
 ]
 
 ROOT_URLCONF = 'SuperService.urls'
@@ -75,6 +86,7 @@ ROOT_URLCONF = 'SuperService.urls'
 # ----------------------------------------------------------------------
 # TEMPLATES (Rutas de Plantillas)
 # ----------------------------------------------------------------------
+# ... (Tu configuración de TEMPLATES no ha cambiado) ...
 
 TEMPLATES = [
     {
@@ -92,29 +104,17 @@ TEMPLATES = [
     },
 ]
 
-
 # ----------------------------------------------------------------------
-# CONFIGURACIÓN DE CHANNELS/ASGI (¡CORRECCIÓN CLAVE!)
+# CONFIGURACIÓN DE CHANNELS/ASGI (CORRECTA)
 # ----------------------------------------------------------------------
 
-# 1. Define la aplicación principal ASGI.
-# ESTA LÍNEA FUE CORREGIDA DE 'myproject' A 'SuperService'.
-ASGI_APPLICATION = 'SuperService.asgi.application' # ✅ Debe ser ASGI_APPLICATION
+ASGI_APPLICATION = 'SuperService.asgi.application'
 
-# 2. Configura la capa de canales (CRÍTICO para el broadcast):
 CHANNEL_LAYERS = {
     'default': {
-        # Esta es la configuración MÍNIMA para desarrollo. 
-        # Si no tienes Redis, usa esta capa en memoria:
-        'BACKEND': 'channels.layers.InMemoryChannelLayer', 
+        # Usar la capa en memoria en desarrollo, o en caso de que Redis no esté configurado.
+        'BACKEND': config('CHANNEL_LAYER_BACKEND', default='channels.layers.InMemoryChannelLayer'),
     },
-    # Opcional (si usas Redis):
-    # 'default': {
-    #     'BACKEND': 'channels_redis.pubsub.RedisChannelLayer',
-    #     'CONFIG': {
-    #         "hosts": [('127.0.0.1', 6379)],
-    #     },
-    # },
 }
 
 # ----------------------------------------------------------------------
@@ -123,24 +123,38 @@ CHANNEL_LAYERS = {
 
 WSGI_APPLICATION = 'SuperService.wsgi.application'
 
-'''
-DATABASES = {
-    'default': {
-        'ENGINE': 'django.db.backends.sqlite3',
-        'NAME': BASE_DIR / 'db.sqlite3',
+# 🔑 CORRECCIÓN CRÍTICA: Base de datos que se adapta a DEBUG
+if DEBUG:
+    # Usar SQLite en desarrollo local
+    DATABASES = {
+        'default': {
+            'ENGINE': 'django.db.backends.sqlite3',
+            'NAME': BASE_DIR / 'db.sqlite3',
+        }
     }
-}
-'''
-DATABASES = {
-    'default': {
-        'ENGINE': 'django.db.backends.mysql',  # 👈 CAMBIAR AQUÍ
-        'NAME': 'nombre_bd',
-        'USER': 'usuario_bd',
-        'PASSWORD': 'password_bd',
-        'HOST': 'host_bd',
-        'PORT': '3306', # Puerto por defecto de MySQL
+else:
+    # Usar PostgreSQL o MySQL en producción, cargando credenciales de las variables de entorno
+    DATABASES = {
+        'default': {
+            # Siempre debe buscar la clave 'DB_ENGINE'
+            'ENGINE': config('DB_ENGINE', default='django.db.backends.postgresql'), 
+            
+            # 🔑 CORRECTO: Busca la clave 'DB_NAME'
+            'NAME': config('DB_NAME'), 
+            
+            # 🔑 CORRECTO: Busca la clave 'DB_USER'
+            'USER': config('DB_USER'), 
+            
+            # Correcto: Busca la clave 'DB_PASSWORD'
+            'PASSWORD': config('DB_PASSWORD'), 
+            
+            # 🔑 CORRECTO: Busca la clave 'DB_HOST'
+            'HOST': config('DB_HOST'),
+            
+            # Correcto: Busca la clave 'DB_PORT'
+            'PORT': config('DB_PORT', default='5432'), 
+        }
     }
-}
 
 
 # ----------------------------------------------------------------------
@@ -151,102 +165,66 @@ AUTH_USER_MODEL = 'usuarios.UsuarioPersonalizado'
 LOGIN_REDIRECT_URL = 'home'
 LOGIN_URL = 'login'
 
+# ... (VALIDACIÓN DE CONTRASEÑAS, IDIOMA Y ZONA HORARIA sin cambios) ...
 
 # ----------------------------------------------------------------------
-# VALIDACIÓN DE CONTRASEÑAS
+# ARCHIVOS ESTÁTICOS Y MEDIA (WHITENOISE)
 # ----------------------------------------------------------------------
 
-AUTH_PASSWORD_VALIDATORS = [
-    {
-        'NAME': 'django.contrib.auth.password_validation.UserAttributeSimilarityValidator',
-    },
-    {
-        'NAME': 'django.contrib.auth.password_validation.MinimumLengthValidator',
-    },
-    {
-        'NAME': 'django.contrib.auth.password_validation.CommonPasswordValidator',
-    },
-    {
-        'NAME': 'django.contrib.auth.password_validation.NumericPasswordValidator',
-    },
-]
-
-
-# ----------------------------------------------------------------------
-# IDIOMA Y ZONA HORARIA
-# ----------------------------------------------------------------------
-
-LANGUAGE_CODE = 'es-es'
-TIME_ZONE = 'America/Caracas'
-USE_I18N = True
-USE_TZ = True
-
-
-# ARCHIVOS ESTÁTICOS Y CRISPY FORMS
-# ----------------------------------------------------------------------
-
-# 1. La URL que se usa en las plantillas (siempre debe ser la única)
-STATIC_URL = '/static/' 
-
-# 2. Directorios adicionales donde Django debe buscar archivos estáticos.
-# Esta línea le dice a Django: "Busca la carpeta 'static' dentro de la ruta BASE_DIR"
+STATIC_URL = '/static/'
 STATICFILES_DIRS = [
     os.path.join(BASE_DIR, 'static'), 
 ]
 
-# Configuración de Crispy Forms
-CRISPY_ALLOWED_TEMPLATE_PACKS = "bootstrap5" 
-CRISPY_TEMPLATE_PACK = "bootstrap5"
+# 🔑 NECESARIO PARA WHITENOISE: Define la carpeta donde se copiarán los estáticos
+STATIC_ROOT = BASE_DIR / 'staticfiles'
 
-DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
-
-
-# Origen por defecto: solo recursos propios
-CSP_DEFAULT_SRC = ("'self'",)
-
-# Permite imágenes (mosaicos de mapa e iconos de marcador)
-CSP_IMG_SRC = (
-    "'self'",
-    "data:",                       # Imágenes incrustadas (base64)
-    "*.tile.openstreetmap.org",    # Mosaicos de OpenStreetMap
-    "raw.githubusercontent.com",   # Iconos de marcador de colores (leaflet-color-markers)
-    "https://cdnjs.cloudflare.com" # Recursos de imagen o datos cargados desde cdnjs/Cloudflare
-)
-
-# Permite hojas de estilo
-CSP_STYLE_SRC = (
-    "'self'", 
-    "https://unpkg.com", 
-    "https://cdnjs.cloudflare.com", 
-    "'unsafe-inline'"             # Necesario para que Leaflet inyecte estilos dinámicos
-)
-
-# Permite scripts de JavaScript
-CSP_SCRIPT_SRC = (
-    "'self'", 
-    "https://unpkg.com", 
-    "https://cdnjs.cloudflare.com"
-)
-
-
-# Si estás ejecutando en HTTP (local), debe ser False
-CSRF_COOKIE_SECURE = False 
-
-# Si estás ejecutando en HTTP (local), debe ser False
-SESSION_COOKIE_SECURE = False
-
-
-# Permite a cualquier frontend conectarse temporalmente (solo en desarrollo inicial)
-CORS_ALLOW_ALL_ORIGINS = True
-
-# O la opción más segura (reemplaza esto después de desplegar):
-# CORS_ALLOWED_ORIGINS = [
-#     "http://localhost:8081", # Para pruebas en emulador React Native
-# ]
-
-
-# Configuración de WhiteNoise para comprimir y servir archivos estáticos
+# 🔑 Configuración de WhiteNoise para servir los archivos estáticos en producción
 STATICFILES_STORAGE = 'whitenoise.storage.CompressedManifestStaticFilesStorage'
 
-# Directorio donde Django recolectará los archivos estáticos para WhiteNoise
-STATIC_ROOT = BASE_DIR / 'staticfiles'
+
+# 🔑 AÑADIDO: Configuración de archivos de Media (para imágenes de usuarios)
+MEDIA_URL = '/media/'
+MEDIA_ROOT = BASE_DIR / 'media'
+
+
+# ----------------------------------------------------------------------
+# SEGURIDAD Y CORS (ADAPTACIÓN A PRODUCCIÓN)
+# ----------------------------------------------------------------------
+
+# 🔑 CORRECCIÓN: Estos deben ser True en producción (DEBUG=False)
+CSRF_COOKIE_SECURE = config('CSRF_COOKIE_SECURE', default=False, cast=bool)
+SESSION_COOKIE_SECURE = config('SESSION_COOKIE_SECURE', default=False, cast=bool)
+
+
+# 🔑 CORRECCIÓN: Lógica para CORS que se ajusta a DEBUG
+if DEBUG:
+    # Permitir todo en desarrollo
+    CORS_ALLOW_ALL_ORIGINS = True
+else:
+    # En producción, restringir solo a la URL de la aplicación móvil (React Native)
+    CORS_ALLOWED_ORIGINS = [
+        "https://tu-dominio-react-native.com", # Dominio de la app web/móvil si existe
+        # Ejemplo para pruebas en emulador/Expo:
+        # "http://localhost:8081",
+        # "exp://192.168.1.100:8081",
+    ]
+
+
+# ----------------------------------------------------------------------
+# CSP Y OTROS (Se mantienen tus valores)
+# ----------------------------------------------------------------------
+# ...
+
+
+# Añade esto al final de tu settings.py
+CSRF_TRUSTED_ORIGINS = [
+    'https://norbe-final.loca.lt',
+    'http://192.168.1.10:8080',  # <--- Agrega esto para que el celular pueda enviar datos
+    'http://127.0.0.1:8080'
+]
+
+# 3. Verifica que el CORS esté abierto en modo DEBUG (esto también lo tienes bien)
+if DEBUG:
+    CORS_ALLOW_ALL_ORIGINS = True
+

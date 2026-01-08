@@ -10,6 +10,13 @@ from django.utils import timezone
 from django.utils.decorators import method_decorator
 from django.views.decorators.http import require_POST
 from django.views.generic import DetailView # Se mantiene si se usa en otras vistas
+from rest_framework.permissions import AllowAny # Importa esto arriba
+from django.contrib.auth import get_user_model
+from rest_framework import status
+from rest_framework.response import Response
+from django.http import JsonResponse
+from django.views.decorators.csrf import csrf_exempt
+import json
 
 from .forms import (
     ViajeSolicitudForm, 
@@ -474,47 +481,57 @@ class VehiculoViewSet(viewsets.ModelViewSet):
     
     # Asigna automáticamente el conductor al crear
     def perform_create(self, serializer):
-        serializer.save(conductor=self.request.user)
+        from django.contrib.auth import get_user_model
+        User = get_user_model()
+        
+        # Intentamos buscar al usuario norbe para que el viaje no quede huérfano
+        usuario_norbe = User.objects.filter(username="norbe").first()
+        
+        if usuario_norbe:
+            serializer.save(cliente=usuario_norbe)
+        else:
+            # Si no existe norbe, se guarda con el usuario 1 (el admin)
+            serializer.save(cliente_id=1)
 
 # --- 2. API para Viajes ---
+
+
 class ViajeViewSet(viewsets.ModelViewSet):
     serializer_class = ViajeSerializer
-    # Usaremos una consulta compleja para que solo el cliente o conductor vean el viaje
-    queryset = Viaje.objects.all() 
-    permission_classes = [IsAuthenticated]
-    
-    def get_queryset(self):
-        user = self.request.user
-        if user.is_staff:
-            return Viaje.objects.all()
-        # Filtrar viajes donde el usuario es el cliente O el conductor
-        return Viaje.objects.filter(
-            Q(cliente=user) | Q(conductor=user)
-        ).distinct()
+    queryset = Viaje.objects.all()
+    permission_classes = [AllowAny] 
 
-    # Asigna automáticamente el cliente al crear
-    def perform_create(self, serializer):
-        serializer.save(cliente=self.request.user)
-
-# --- 3. API para Mensajes de Chat ---
-class MensajeViajeViewSet(viewsets.ModelViewSet):
-    serializer_class = MensajeViajeSerializer
-    permission_classes = [IsAuthenticated]
-    queryset = MensajeViaje.objects.all()
-    
-    def get_queryset(self):
-        # Mostrar solo los mensajes de los viajes a los que el usuario pertenece
-        user = self.request.user
-        if user.is_staff:
-            return MensajeViaje.objects.all()
-            
-        return MensajeViaje.objects.filter(
-            Q(viaje__cliente=user) | Q(viaje__conductor=user)
-        ).distinct()
+    def create(self, request, *args, **kwargs):
+        # Copiamos los datos para poder modificarlos
+        datos = request.data.copy()
         
-    # Asigna automáticamente el emisor al crear
-    def perform_create(self, serializer):
-        serializer.save(emisor=self.request.user)
+        # 1. Limpieza de seguridad:
+        # Si la App manda "norbelys" en texto, el Serializer fallará si espera un ID.
+        # Quitamos 'cliente' del diccionario para asignarlo nosotros manualmente después.
+        if 'cliente' in datos:
+            del datos['cliente']
+
+        serializer = self.get_serializer(data=datos)
+        
+        if not serializer.is_valid():
+            print("❌ ERRORES DE VALIDACIÓN:", serializer.errors)
+            # Si ves aquí un error que dice "tarifa: campo requerido", 
+            # es porque en tu App se llama 'tarifa_estimada' y en tu BD se llama 'tarifa'.
+            return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+        
+        try:
+            from django.contrib.auth import get_user_model
+            User = get_user_model()
+            usuario = User.objects.filter(username="norbe").first() or User.objects.first()
+            
+            # Guardamos asignando el cliente manualmente
+            serializer.save(cliente=usuario)
+            
+            print("✅ ¡VIAJE GUARDADO PARA NORBE!")
+            return Response(serializer.data, status=status.HTTP_201_CREATED)
+        except Exception as e:
+            print("❌ ERROR AL GUARDAR:", str(e))
+            return Response({"error": str(e)}, status=500)
         
 # --- 4. API para Asistencia Vial ---
 class SolicitudAsistenciaViewSet(viewsets.ModelViewSet):
@@ -533,3 +550,24 @@ class SolicitudAsistenciaViewSet(viewsets.ModelViewSet):
 
     def perform_create(self, serializer):
         serializer.save(cliente=self.request.user)
+
+
+class MensajeViajeViewSet(viewsets.ModelViewSet):  # <--- MIRA ESTE NOMBRE
+    serializer_class = MensajeViajeSerializer
+    permission_classes = [IsAuthenticated]
+    queryset = MensajeViaje.objects.all()
+    
+    def get_queryset(self):
+        user = self.request.user
+        if user.is_staff:
+            return MensajeViaje.objects.all()
+            
+        return MensajeViaje.objects.filter(
+            Q(viaje__cliente=user) | Q(viaje__conductor=user)
+        ).distinct()
+        
+    def perform_create(self, serializer):
+        serializer.save(emisor=self.request.user)
+
+
+

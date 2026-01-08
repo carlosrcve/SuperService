@@ -1,3 +1,5 @@
+<!templates/domicilios/comercio_list.html!>
+
 {% extends "base.html" %}
 
 {% load static %}
@@ -14,16 +16,14 @@
             <p class="lead text-muted">Explora restaurantes, supermercados, farmacias y más cerca de ti.</p>
         </div>
         <div class="col-md-4">
-            <form class="d-flex">
-                <input class="form-control form-control-lg me-2" type="search" placeholder="Buscar comercio o producto..." aria-label="Search">
+            <form class="d-flex" method="GET" action="">
+                <input class="form-control form-control-lg me-2" type="search" name="q" placeholder="Buscar comercio..." aria-label="Search">
                 <button class="btn btn-lg btn-success" type="submit"><i class="bi bi-search"></i></button>
             </form>
         </div>
     </div>
     
     {% if user.is_authenticated %}
-        
-        {# Nota: 'ultimo_pedido' debe ser pasado por la vista (ComercioListView) #}
         {% if ultimo_pedido %}
             <div class="alert alert-info d-flex justify-content-between align-items-center shadow-sm mb-4 p-3" role="alert">
                 <div class="fw-bold">
@@ -31,8 +31,6 @@
                     Tienes un pedido activo (N° **{{ ultimo_pedido.id }}**) - Estado: 
                     <span class="text-primary">{{ ultimo_pedido.get_estado_display }}</span>.
                 </div>
-                
-                {# CRÍTICO: Usa el nombre de la URL 'pedido_detalle' y pasa el ID del pedido como pk #}
                 <a href="{% url 'domicilios:pedido_detalle' pk=ultimo_pedido.pk %}" class="btn btn-sm btn-primary py-2">
                     <i class="bi bi-eye-fill me-1"></i> Ver Detalle
                 </a>
@@ -42,111 +40,60 @@
                  <i class="bi bi-emoji-smile me-2"></i> ¡Bienvenido de nuevo! Esperamos tu próximo pedido.
             </div>
         {% endif %}
-
     {% endif %}
+
     <div class="mb-4 d-flex flex-wrap gap-2">
-        <span class="badge rounded-pill bg-success p-2 px-3 fw-normal filter-pill active">Todos (15)</span>
-        <span class="badge rounded-pill bg-light text-dark p-2 px-3 fw-normal filter-pill">Comida (7)</span>
-        <span class="badge rounded-pill bg-light text-dark p-2 px-3 fw-normal filter-pill">Supermercado (3)</span>
-        <span class="badge rounded-pill bg-light text-dark p-2 px-3 fw-normal filter-pill">Farmacia (2)</span>
-        <span class="badge rounded-pill bg-light text-dark p-2 px-3 fw-normal filter-pill">Bebidas (3)</span>
+        <span class="badge rounded-pill bg-success p-2 px-3 fw-normal filter-pill active">Todos</span>
+        <span class="badge rounded-pill bg-light text-dark p-2 px-3 fw-normal filter-pill">Comida</span>
+        <span class="badge rounded-pill bg-light text-dark p-2 px-3 fw-normal filter-pill">Supermercado</span>
+        <span class="badge rounded-pill bg-light text-dark p-2 px-3 fw-normal filter-pill">Farmacia</span>
+        <span class="badge rounded-pill bg-light text-dark p-2 px-3 fw-normal filter-pill">Bebidas</span>
     </div>
 
     <div class="row row-cols-1 row-cols-md-2 row-cols-lg-3 g-4">
-        
-        <div class="col">
-            <a href="#" class="card-link text-decoration-none">
-                <div class="card h-100 shadow-sm hover-lift" style="border-radius: 12px; overflow: hidden;">
-                    <img src="https://placehold.co/600x400/379654/ffffff?text=RESTAURANTE" class="card-img-top" alt="Imagen de Restaurante" style="height: 180px; object-fit: cover;">
-                    <div class="card-body p-3">
-                        <h5 class="card-title fw-bold" style="color: var(--yummy-dark-green);">El Rincón del Sabor</h5>
-                        <p class="card-text text-muted small mb-1">
-                            <i class="bi bi-geo-alt-fill me-1"></i> A 1.5 km - Comida Rápida, Hamburguesas
-                        </p>
-                        <p class="card-text mb-0">
-                            <span class="badge bg-warning text-dark"><i class="bi bi-star-fill small"></i> 4.7</span>
-                            <span class="badge bg-success ms-2"><i class="bi bi-truck"></i> Envío Gratis</span>
-                        </p>
+        {% for comercio in comercios %}
+            <div class="col">
+                <a href="{% url 'domicilios:producto_list' comercio.id %}" class="card-link text-decoration-none">
+                    <div class="card h-100 shadow-sm hover-lift" style="border-radius: 12px; overflow: hidden;">
+                        
+                        {% if comercio.imagen %}
+                            <img src="{{ comercio.imagen.url }}" class="card-img-top" alt="{{ comercio.nombre }}" style="height: 180px; object-fit: cover;">
+                        {% else %}
+                            <img src="https://placehold.co/600x400/379654/ffffff?text={{ comercio.nombre|urlencode }}" class="card-img-top" alt="Imagen por defecto" style="height: 180px; object-fit: cover;">
+                        {% endif %}
+                        
+                        <div class="card-body p-3">
+                            <h5 class="card-title fw-bold" style="color: var(--yummy-dark-green);">{{ comercio.nombre }}</h5>
+                            <p class="card-text text-muted small mb-1">
+                                <i class="bi bi-geo-alt-fill me-1"></i> {{ comercio.direccion|truncatechars:40 }}
+                            </p>
+                            <p class="card-text mb-0">
+                                <span class="badge bg-info text-dark">{{ comercio.get_tipo_display|default:comercio.tipo }}</span>
+                                {% if comercio.abierto %}
+                                    <span class="badge bg-success ms-2">Abierto</span>
+                                {% else %}
+                                    <span class="badge bg-danger ms-2">Cerrado</span>
+                                {% endif %}
+                            </p>
+                        </div>
+                        <div class="card-footer bg-white border-0 p-3 pt-0 d-flex justify-content-between align-items-center">
+                            <span class="text-secondary small">Entrega rápida</span>
+                            <span class="fw-bold text-success">Ver menú <i class="bi bi-arrow-right-circle-fill"></i></span>
+                        </div>
                     </div>
-                    <div class="card-footer bg-white border-0 p-3 pt-0 d-flex justify-content-between align-items-center">
-                        <span class="text-secondary small">Tiempo: 20-30 min</span>
-                        <span class="fw-bold text-success">Abrir <i class="bi bi-arrow-right-circle-fill"></i></span>
-                    </div>
-                </div>
-            </a>
-        </div>
-        
-        <div class="col">
-            <a href="#" class="card-link text-decoration-none">
-                <div class="card h-100 shadow-sm hover-lift" style="border-radius: 12px; overflow: hidden;">
-                    <img src="https://placehold.co/600x400/0d6efd/ffffff?text=SUPERMERCADO" class="card-img-top" alt="Imagen de Supermercado" style="height: 180px; object-fit: cover;">
-                    <div class="card-body p-3">
-                        <h5 class="card-title fw-bold" style="color: var(--yummy-dark-green);">Market Place Express</h5>
-                        <p class="card-text text-muted small mb-1">
-                            <i class="bi bi-geo-alt-fill me-1"></i> A 500 m - Víveres, Hogar
-                        </p>
-                        <p class="card-text mb-0">
-                            <span class="badge bg-warning text-dark"><i class="bi bi-star-fill small"></i> 4.9</span>
-                            <span class="badge bg-secondary ms-2"><i class="bi bi-currency-dollar"></i> Envío $3.50</span>
-                        </p>
-                    </div>
-                    <div class="card-footer bg-white border-0 p-3 pt-0 d-flex justify-content-between align-items-center">
-                        <span class="text-secondary small">Tiempo: 45-60 min</span>
-                        <span class="fw-bold text-success">Abrir <i class="bi bi-arrow-right-circle-fill"></i></span>
-                    </div>
-                </div>
-            </a>
-        </div>
-
-        <div class="col">
-            <a href="#" class="card-link text-decoration-none">
-                <div class="card h-100 shadow-sm hover-lift" style="border-radius: 12px; overflow: hidden;">
-                    <img src="https://placehold.co/600x400/dc3545/ffffff?text=FARMACIA" class="card-img-top" alt="Imagen de Farmacia" style="height: 180px; object-fit: cover;">
-                    <div class="card-body p-3">
-                        <h5 class="card-title fw-bold" style="color: var(--yummy-dark-green);">Farmacias Vital</h5>
-                        <p class="card-text text-muted small mb-1">
-                            <i class="bi bi-geo-alt-fill me-1"></i> A 2.1 km - Medicamentos, Cuidado Personal
-                        </p>
-                        <p class="card-text mb-0">
-                            <span class="badge bg-warning text-dark"><i class="bi bi-star-fill small"></i> 4.5</span>
-                            <span class="badge bg-success ms-2"><i class="bi bi-truck"></i> Envío $1.00</span>
-                        </p>
-                    </div>
-                    <div class="card-footer bg-white border-0 p-3 pt-0 d-flex justify-content-between align-items-center">
-                        <span class="text-secondary small">Tiempo: 15-25 min</span>
-                        <span class="fw-bold text-success">Abrir <i class="bi bi-arrow-right-circle-fill"></i></span>
-                    </div>
-                </div>
-            </a>
-        </div>
-        
-        <div class="col">
-            <a href="#" class="card-link text-decoration-none">
-                <div class="card h-100 shadow-sm hover-lift" style="border-radius: 12px; overflow: hidden;">
-                    <img src="https://placehold.co/600x400/ffc107/333333?text=CAFETERIA" class="card-img-top" alt="Imagen de Cafetería" style="height: 180px; object-fit: cover;">
-                    <div class="card-body p-3">
-                        <h5 class="card-title fw-bold" style="color: var(--yummy-dark-green);">Café y Caprichos</h5>
-                        <p class="card-text text-muted small mb-1">
-                            <i class="bi bi-geo-alt-fill me-1"></i> A 800 m - Postres, Café, Desayunos
-                        </p>
-                        <p class="card-text mb-0">
-                            <span class="badge bg-warning text-dark"><i class="bi bi-star-fill small"></i> 4.8</span>
-                            <span class="badge bg-success ms-2"><i class="bi bi-truck"></i> Envío Gratis</span>
-                        </p>
-                    </div>
-                    <div class="card-footer bg-white border-0 p-3 pt-0 d-flex justify-content-between align-items-center">
-                        <span class="text-secondary small">Tiempo: 30-40 min</span>
-                        <span class="fw-bold text-success">Abrir <i class="bi bi-arrow-right-circle-fill"></i></span>
-                    </div>
-                </div>
-            </a>
-        </div>
-        
+                </a>
+            </div>
+        {% empty %}
+            <div class="col-12 text-center py-5">
+                <i class="bi bi-shop shadow-sm p-4 rounded-circle mb-3 d-inline-block" style="font-size: 3rem; color: #ccc;"></i>
+                <p class="lead text-muted">No encontramos comercios activos en tu zona.</p>
+                <a href="{% url 'home' %}" class="btn btn-outline-success">Volver al menú principal</a>
+            </div>
+        {% endfor %}
     </div>
-    </div>
+</div>
 
 <style>
-    /* Estilo para las pastillas de filtro */
     .filter-pill {
         cursor: pointer;
         transition: all 0.2s;
@@ -159,7 +106,6 @@
         border: 1px solid var(--yummy-light-green);
     }
     
-    /* Efecto de elevación de las tarjetas (Ya debe estar en main.css, pero lo aseguramos aquí por si acaso) */
     .hover-lift {
         transition: transform 0.2s ease, box-shadow 0.2s ease;
     }
@@ -169,4 +115,16 @@
         box-shadow: 0 10px 20px rgba(0, 0, 0, 0.15) !important;
     }
 </style>
+
+<script>
+    document.querySelectorAll('.filter-pill').forEach(pill => {
+        pill.addEventListener('click', () => {
+            document.querySelectorAll('.filter-pill').forEach(p => p.classList.remove('active', 'bg-success'));
+            document.querySelectorAll('.filter-pill').forEach(p => p.classList.add('bg-light', 'text-dark'));
+            
+            pill.classList.add('active', 'bg-success');
+            pill.classList.remove('bg-light', 'text-dark');
+        });
+    });
+</script>
 {% endblock %}

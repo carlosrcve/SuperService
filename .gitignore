@@ -1,1 +1,19 @@
- 
+# --- SEGURIDAD ---
+.env
+
+# --- DJANGO ---
+db.sqlite3
+staticfiles/
+media/
+__pycache__/
+*.py[cod]
+
+# --- ENTORNO VIRTUAL ---
+venv/
+env/
+.venv/
+
+# --- IDEs Y SISTEMA ---
+.vscode/
+.idea/
+.DS_Store 
